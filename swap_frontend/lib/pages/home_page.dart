@@ -82,65 +82,19 @@ class HomePage extends StatelessWidget {
     return Theme(
       data: theme,
       child: Scaffold(
-        appBar: AppBar(
-          titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Row(
-              children: [
-                // Mini logo circle
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0x1510B981),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: line),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'Swap',
-                    style: TextStyle(fontSize: 11, color: textMuted, height: 1),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Search in app bar (like screenshot)
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: textMuted),
-                      hintText: 'Search skills...',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  tooltip: 'Notifications',
-                  icon: const Icon(Icons.notifications_none_rounded),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  tooltip: 'Sign out',
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await AuthService.instance.signOut();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LandingPage()),
-                      (route) => false,
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-        ),
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const _Sidebar(),
-            Expanded(child: _DiscoverPane()),
+            // Right side: Top bar + content
+            Expanded(
+              child: Column(
+                children: [
+                  _TopBar(), // custom top bar
+                  Expanded(child: _DiscoverPane()),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -165,7 +119,21 @@ class _Sidebar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                height: 70,
+                child: Image.asset(
+                  'assets/Swap-removebg-preview.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          const Divider(color: HomePage.line, height: 1),
+          const SizedBox(height: 12),
           _NavItem(icon: Icons.home_rounded, label: 'Home', active: true),
           _NavItem(icon: Icons.explore_outlined, label: 'Discover'),
           _NavItem(icon: Icons.add_circle_outline, label: 'Post Skill', onTap: () {
@@ -720,4 +688,88 @@ class _Skill {
     this.verified = false,
     this.isNew = false,
   });
+}
+
+class _TopBar extends StatelessWidget implements PreferredSizeWidget {
+  const _TopBar({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(64);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: preferredSize.height,
+      color: HomePage.bg,
+      padding: const EdgeInsets.fromLTRB(24, 10, 12, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search skills...',
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: HomePage.textMuted,
+                  ),
+                  filled: true,
+                  fillColor: HomePage.surface,
+                  contentPadding: EdgeInsets.zero,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: const BorderSide(color: HomePage.line),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: const BorderSide(color: HomePage.line),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: const BorderSide(color: HomePage.accent),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'Notifications',
+                icon: const Icon(Icons.notifications_none_rounded),
+                onPressed: () {},
+              ),
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LandingPage()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }

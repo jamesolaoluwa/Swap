@@ -101,46 +101,21 @@ class _NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: surface,
-      padding: const EdgeInsets.symmetric(vertical: 18),
+      height: 64,
       child: _MaxWidth(
         child: Row(
           children: [
-            // Logo
-            Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: accent,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accent.withOpacity(.45),
-                        blurRadius: 16,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'S',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+            // Bigger logo but constrained by the bar height
+            Padding(
+              padding: const EdgeInsets.only(left: 1),
+              child: SizedBox(
+                height: 72,
+                child: Image.asset(
+                  'assets/Swap-removebg-preview.png',
+                  height: 100,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  'Swap',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+              ),
             ),
             const Spacer(),
             TextButton(
@@ -155,7 +130,6 @@ class _NavBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Purple CTA
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(
@@ -890,14 +864,14 @@ class _Footer extends StatelessWidget {
                     Expanded(
                       child: Row(
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: Colors.white24,
-                              shape: BoxShape.rectangle,
+                          SizedBox(
+                            height: 50,
+                            child: Image.asset(
+                              'assets/Swap-removebg-preview.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
+
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -933,7 +907,7 @@ class _Footer extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '© 2024 Swap. All rights reserved.',
+                r'© 2025 $wap. All rights reserved.',
                 style: TextStyle(color: textMuted),
               ),
             ),

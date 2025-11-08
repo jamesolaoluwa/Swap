@@ -262,7 +262,7 @@ class _AuthCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              "Sign in",
+              r"Welcome back to $wap, Sign in",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 28,
@@ -468,37 +468,18 @@ class _Rainbow3D extends StatelessWidget {
 class SLogoButton extends StatelessWidget {
   final VoidCallback onTap;
   final double size;
-  const SLogoButton({super.key, required this.onTap, this.size = 40});
+  const SLogoButton({super.key, required this.onTap, this.size = 80});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(size),
-      child: Container(
+      child: SizedBox(
         height: size,
         width: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(size),
-          border: Border.all(color: Colors.white24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Text(
-          'S',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            letterSpacing: 1.2,
-          ),
+        child: Image.asset(
+          'assets/Swap-removebg-preview.png',
+          fit: BoxFit.contain,
         ),
       ),
     );
