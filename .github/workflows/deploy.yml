@@ -6,23 +6,27 @@ on:
       - main
     paths:
       # Only trigger on backend code changes
-      - 'app/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'Dockerfile'
-      - 'fly.toml'
+      - 'wap-backend/app/**'
+      - 'wap-backend/tests/**'
+      - 'wap-backend/requirements.txt'
+      - 'wap-backend/Dockerfile'
+      - 'wap-backend/fly.toml'
       - '.github/workflows/deploy.yml'
   pull_request:
     branches:
       - main
     paths:
       # Only run tests when backend code changes
-      - 'app/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'Dockerfile'
-      - 'fly.toml'
+      - 'wap-backend/app/**'
+      - 'wap-backend/tests/**'
+      - 'wap-backend/requirements.txt'
+      - 'wap-backend/Dockerfile'
+      - 'wap-backend/fly.toml'
       - '.github/workflows/deploy.yml'
+
+defaults:
+  run:
+    working-directory: wap-backend
 
 jobs:
   # Job 1: Run tests and linting (fast feedback)
@@ -39,6 +43,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: 'wap-backend/requirements.txt'
       
       - name: Install dependencies
         run: |
@@ -83,7 +88,7 @@ jobs:
       - name: Build Docker image (no push)
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./wap-backend
           push: false
           tags: swap-backend:${{ github.sha }}
           cache-from: type=gha
@@ -104,11 +109,13 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
       
       - name: Deploy to Fly.io
+        working-directory: wap-backend
         run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       
       - name: Wait for deployment health check
+        working-directory: wap-backend
         run: |
           echo "Waiting for app to be healthy..."
           sleep 30
