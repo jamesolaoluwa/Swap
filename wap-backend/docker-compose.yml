@@ -24,7 +24,7 @@ services:
       FIREBASE_CREDENTIALS_PATH: /app/firebase-credentials.json
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
     volumes:
       - ./app:/app/app
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
