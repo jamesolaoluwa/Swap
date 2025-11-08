@@ -1,11 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-
-// Post Skill Page (dark theme, black + purple) -----------------------------------------------------------------
-// This file implements a desktop/web-friendly layout that mirrors the white/green
-// reference but in a dark black + purple palette. The page uses modular widgets
-// for the sidebar, top bar, cards, tags input, and deliverables list. A Form
-// with validation builds a PostSkillRequest and prints JSON to console.
+import 'home_page.dart';
+import '../widgets/app_sidebar.dart';
 
 // Color palette used throughout the page
 const Color backgroundColor = Color(0xFF0F0F11);
@@ -27,7 +23,9 @@ class _PostSkillPageState extends State<PostSkillPage> {
   // Controllers / state
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _hoursController = TextEditingController(text: '1');
+  final TextEditingController _hoursController = TextEditingController(
+    text: '1',
+  );
   final TextEditingController _tagController = TextEditingController();
   final TextEditingController _deliverableController = TextEditingController();
 
@@ -37,7 +35,13 @@ class _PostSkillPageState extends State<PostSkillPage> {
   final List<String> _tags = [];
   final List<String> _deliverables = [];
 
-  final List<String> _categories = ['Design', 'Development', 'Business', 'Music', 'Other'];
+  final List<String> _categories = [
+    'Design',
+    'Development',
+    'Business',
+    'Music',
+    'Other',
+  ];
   final List<String> _levels = ['Beginner', 'Intermediate', 'Advanced'];
   final List<String> _deliveryOptions = ['Remote Only', 'In-Person', 'Hybrid'];
 
@@ -51,12 +55,11 @@ class _PostSkillPageState extends State<PostSkillPage> {
     super.dispose();
   }
 
-  bool get _canPublish {
-    return _titleController.text.trim().isNotEmpty &&
-        _descriptionController.text.trim().isNotEmpty &&
-        _category != null &&
-        _difficulty != null;
-  }
+  bool get _canPublish =>
+      _titleController.text.trim().isNotEmpty &&
+      _descriptionController.text.trim().isNotEmpty &&
+      _category != null &&
+      _difficulty != null;
 
   void _addTag() {
     final v = _tagController.text.trim();
@@ -80,8 +83,9 @@ class _PostSkillPageState extends State<PostSkillPage> {
 
   void _publish() {
     if (!_canPublish) {
-      // show inline validation message
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete the required fields.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete the required fields.')),
+      );
       return;
     }
 
@@ -96,12 +100,13 @@ class _PostSkillPageState extends State<PostSkillPage> {
       deliverables: List.of(_deliverables),
     );
 
-    // Print JSON to console and show success snackbar
-    final json = jsonEncode(request.toJson());
+    final jsonStr = jsonEncode(request.toJson());
     // ignore: avoid_print
-    print('PostSkillRequest: $json');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Skill published!')));
+    print('PostSkillRequest: $jsonStr');
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Skill published!')));
     }
   }
 
@@ -113,32 +118,50 @@ class _PostSkillPageState extends State<PostSkillPage> {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cardColor.withOpacity(.6),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white12)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white12)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: accentPurple, width: 2)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: accentPurple, width: 2),
+        ),
         hintStyle: const TextStyle(color: Colors.white70),
       ),
-      textTheme: Theme.of(context).textTheme.apply(bodyColor: textColor, displayColor: textColor),
-      colorScheme: Theme.of(context).colorScheme.copyWith(primary: accentPurple, secondary: accentPurple),
+      textTheme: Theme.of(
+        context,
+      ).textTheme.apply(bodyColor: textColor, displayColor: textColor),
+      colorScheme: Theme.of(
+        context,
+      ).colorScheme.copyWith(primary: accentPurple, secondary: accentPurple),
     );
 
     return Theme(
       data: pageTheme,
       child: Scaffold(
         backgroundColor: backgroundColor,
-        // Body uses a persistent left sidebar + main content column
         body: SafeArea(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Sidebar (fixed width ~260)
-              SidebarNav(activeLabel: 'Post Skill', badgeRequests: '2'),
+              // ✅ Use the shared sidebar everywhere
+              const AppSidebar(active: 'Post Skill'),
 
-              // Main content centered and constrained
+              // Main content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 960),
@@ -146,172 +169,323 @@ class _PostSkillPageState extends State<PostSkillPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 8),
-                          TopBarWithSearch(),
+                          // Top bar with NO notification icon
+                          const _TopBarNoNotifications(),
                           const SizedBox(height: 18),
-                          // Header and subtitle on separate lines
-                          const Text('Share Your Skills', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: textColor)),
-                    const SizedBox(height: 12),
-                          const Text('Help others learn while building your reputation in our community', style: TextStyle(color: Colors.white70)),
+
+                          const Text(
+                            'Share Your Skills',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Help others learn while building your reputation in our community',
+                            style: TextStyle(color: Colors.white70),
+                          ),
                           const SizedBox(height: 20),
 
-                          // Cards + ProTips layout
-                          LayoutBuilder(builder: (context, constraints) {
-                            final bool isWide = constraints.maxWidth >= 760;
-                            if (isWide) {
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Main column with two cards + footer actions
-                                  Expanded(
-                                    flex: 3,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                                      SectionCard(
-                                                        title: 'Basic Information',
-                                                        leading: Container(
-                                                          width: 36,
-                                                          height: 36,
-                                                          decoration: const BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.all(Radius.circular(8))),
-                                                          child: const Center(child: Icon(Icons.auto_awesome, color: Color(0xFF7EEAD3))),
-                                                        ),
-                                                          child: _buildBasicInfoCardContent(),
-                                                      ),
-                                        const SizedBox(height: 28),
-                                        SectionCard(
-                                          title: 'Details & Logistics',
-                                          leading: const Icon(Icons.access_time, color: accentPurple),
-                                          child: _buildDetailsCardContent(),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        // Footer actions: Preview button on the left, Publish fills remaining space
-                                        Row(children: [
-                                          OutlinedButton.icon(
-                                            onPressed: () => setState(() => _showPreview = !_showPreview),
-                                            icon: const Icon(Icons.remove_red_eye),
-                                            label: Text(_showPreview ? 'Hide Preview' : 'Preview'),
-                                            style: OutlinedButton.styleFrom(
-                                              side: const BorderSide(color: accentPurple),
-                                              foregroundColor: accentPurple,
-                                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed: _canPublish ? _publish : null,
-                                              style: ButtonStyle(
-                                                backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                                                  if (states.contains(MaterialState.disabled)) return accentPurple.withOpacity(0.45);
-                                                  return accentPurple;
-                                                }),
-                                                foregroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                                                  if (states.contains(MaterialState.disabled)) return Colors.white70;
-                                                  return Colors.white;
-                                                }),
-                                                padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 26, vertical: 14)),
-                                                shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isWide = constraints.maxWidth >= 760;
+                              if (isWide) {
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Left: form cards
+                                    Expanded(
+                                      flex: 3,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          SectionCard(
+                                            title: 'Basic Information',
+                                            leading: Container(
+                                              width: 36,
+                                              height: 36,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.white10,
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(8),
+                                                ),
                                               ),
-                                              child: const Text('Publish Skill →', style: TextStyle(fontWeight: FontWeight.bold)),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.auto_awesome,
+                                                  color: Color(0xFF7EEAD3),
+                                                ),
+                                              ),
+                                            ),
+                                            child: _buildBasicInfoCardContent(),
+                                          ),
+                                          const SizedBox(height: 28),
+                                          SectionCard(
+                                            title: 'Details & Logistics',
+                                            leading: const Icon(
+                                              Icons.access_time,
+                                              color: accentPurple,
+                                            ),
+                                            child: _buildDetailsCardContent(),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              OutlinedButton.icon(
+                                                onPressed: () => setState(
+                                                  () => _showPreview =
+                                                      !_showPreview,
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.remove_red_eye,
+                                                ),
+                                                label: Text(
+                                                  _showPreview
+                                                      ? 'Hide Preview'
+                                                      : 'Preview',
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  side: const BorderSide(
+                                                    color: accentPurple,
+                                                  ),
+                                                  foregroundColor: accentPurple,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 18,
+                                                        vertical: 14,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  onPressed: _canPublish
+                                                      ? _publish
+                                                      : null,
+                                                  style: ButtonStyle(
+                                                    backgroundColor:
+                                                        MaterialStateProperty.resolveWith<
+                                                          Color?
+                                                        >(
+                                                          (states) =>
+                                                              states.contains(
+                                                                MaterialState
+                                                                    .disabled,
+                                                              )
+                                                              ? accentPurple
+                                                                    .withOpacity(
+                                                                      0.45,
+                                                                    )
+                                                              : accentPurple,
+                                                        ),
+                                                    foregroundColor:
+                                                        MaterialStateProperty.resolveWith<
+                                                          Color?
+                                                        >(
+                                                          (states) =>
+                                                              states.contains(
+                                                                MaterialState
+                                                                    .disabled,
+                                                              )
+                                                              ? Colors.white70
+                                                              : Colors.white,
+                                                        ),
+                                                    padding:
+                                                        MaterialStateProperty.all(
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 26,
+                                                            vertical: 14,
+                                                          ),
+                                                        ),
+                                                    shape: MaterialStateProperty.all(
+                                                      RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'Publish Skill →',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+
+                                    // Right: tips + optional preview
+                                    SizedBox(
+                                      width: 320,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          const ProTipsPanel(),
+                                          const SizedBox(height: 28),
+                                          if (_showPreview)
+                                            PreviewCard(
+                                              title: _titleController.text,
+                                              description:
+                                                  _descriptionController.text,
+                                              category: _category ?? 'Category',
+                                              hours: _hoursController.text,
+                                              mode: _delivery,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              // Narrow layout
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SectionCard(
+                                    title: 'Basic Information',
+                                    leading: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white10,
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.auto_awesome,
+                                          color: Color(0xFF7EEAD3),
+                                        ),
+                                      ),
+                                    ),
+                                    child: _buildBasicInfoCardContent(),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  SectionCard(
+                                    title: 'Details & Logistics',
+                                    leading: const Icon(
+                                      Icons.access_time,
+                                      color: accentPurple,
+                                    ),
+                                    child: _buildDetailsCardContent(),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const ProTipsPanel(),
+                                  const SizedBox(height: 16),
+                                  if (_showPreview)
+                                    PreviewCard(
+                                      title: _titleController.text,
+                                      description: _descriptionController.text,
+                                      category: _category ?? 'Category',
+                                      hours: _hoursController.text,
+                                      mode: _delivery,
+                                    ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: () => setState(
+                                          () => _showPreview = !_showPreview,
+                                        ),
+                                        icon: const Icon(Icons.remove_red_eye),
+                                        label: Text(
+                                          _showPreview
+                                              ? 'Hide Preview'
+                                              : 'Preview',
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(
+                                            color: accentPurple,
+                                          ),
+                                          foregroundColor: accentPurple,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 18,
+                                            vertical: 14,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
                                           ),
-                                        ]),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  // Right column: Pro tips and optional preview
-                                  SizedBox(
-                                    width: 320,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                        const ProTipsPanel(),
-                                        const SizedBox(height: 28),
-                                        if (_showPreview)
-                                          PreviewCard(
-                                            title: _titleController.text,
-                                            description: _descriptionController.text,
-                                            category: _category ?? 'Category',
-                                            hours: _hoursController.text,
-                                            mode: _delivery,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: _canPublish
+                                              ? _publish
+                                              : null,
+                                          style: ButtonStyle(
+                                            backgroundColor:
+                                                MaterialStateProperty.resolveWith<
+                                                  Color?
+                                                >(
+                                                  (states) =>
+                                                      states.contains(
+                                                        MaterialState.disabled,
+                                                      )
+                                                      ? accentPurple
+                                                            .withOpacity(0.45)
+                                                      : accentPurple,
+                                                ),
+                                            foregroundColor:
+                                                MaterialStateProperty.resolveWith<
+                                                  Color?
+                                                >(
+                                                  (states) =>
+                                                      states.contains(
+                                                        MaterialState.disabled,
+                                                      )
+                                                      ? Colors.white70
+                                                      : Colors.white,
+                                                ),
+                                            padding: MaterialStateProperty.all(
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 26,
+                                                vertical: 14,
+                                              ),
+                                            ),
+                                            shape: MaterialStateProperty.all(
+                                              RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
                                           ),
-                                      ],
-                                    ),
+                                          child: const Text(
+                                            'Publish Skill →',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               );
-                            }
-
-                            // Narrow layout
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                SectionCard(
-                                  title: 'Basic Information',
-                                  leading: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: const BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.all(Radius.circular(8))),
-                                    child: const Center(child: Icon(Icons.auto_awesome, color: Color(0xFF7EEAD3))),
-                                  ),
-                                  child: _buildBasicInfoCardContent(),
-                                ),
-                                const SizedBox(height: 16),
-                                SectionCard(
-                                  title: 'Details & Logistics',
-                                  leading: const Icon(Icons.access_time, color: accentPurple),
-                                  child: _buildDetailsCardContent(),
-                                ),
-                                const SizedBox(height: 12),
-                                const ProTipsPanel(),
-                                const SizedBox(height: 16),
-                                if (_showPreview)
-                                  PreviewCard(
-                                    title: _titleController.text,
-                                    description: _descriptionController.text,
-                                    category: _category ?? 'Category',
-                                    hours: _hoursController.text,
-                                    mode: _delivery,
-                                  ),
-                                const SizedBox(height: 12),
-                                // Narrow layout footer: Preview on left, Publish fills remaining width
-                                Row(children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () => setState(() => _showPreview = !_showPreview),
-                                    icon: const Icon(Icons.remove_red_eye),
-                                    label: Text(_showPreview ? 'Hide Preview' : 'Preview'),
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: accentPurple),
-                                      foregroundColor: accentPurple,
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: _canPublish ? _publish : null,
-                                      style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                                          if (states.contains(MaterialState.disabled)) return accentPurple.withOpacity(0.45);
-                                          return accentPurple;
-                                        }),
-                                        foregroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                                          if (states.contains(MaterialState.disabled)) return Colors.white70;
-                                          return Colors.white;
-                                        }),
-                                        padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 26, vertical: 14)),
-                                        shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                      ),
-                                      child: const Text('Publish Skill →', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ])
-                              ],
-                            );
-                          }),
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -329,160 +503,257 @@ class _PostSkillPageState extends State<PostSkillPage> {
   Widget _buildBasicInfoCardContent() {
     return Form(
       key: _formKey,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-  // Skill Title
-  const Text('Skill Title *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-  const SizedBox(height: 10),
-        TextFormField(
-          controller: _titleController,
-          textInputAction: TextInputAction.next,
-          onChanged: (_) => setState(() {}),
-          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-          decoration: const InputDecoration(hintText: 'e.g., Logo Design in Figma'),
-          validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a title' : null,
-        ),
-  const SizedBox(height: 8),
-  const Text('Make it clear and specific', style: TextStyle(color: Colors.white70, fontSize: 13)),
-  const SizedBox(height: 18),
-
-        // Description
-  const Text('Description *', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-  const SizedBox(height: 10),
-        TextFormField(
-          controller: _descriptionController,
-          minLines: 5,
-          maxLines: 7,
-          textInputAction: TextInputAction.newline,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(hintText: "Describe what you'll teach, your experience, and what students will learn..."),
-          validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a description' : null,
-        ),
-  const SizedBox(height: 8),
-  const Text('Be detailed about what you\'ll cover', style: TextStyle(color: Colors.white70, fontSize: 13)),
-  const SizedBox(height: 18),
-
-        // Category & Difficulty Row
-        Row(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Category *', style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              DropdownField<String>(
-                value: _category,
-                hint: 'Select category',
-                items: _categories,
-                onChanged: (v) => setState(() => _category = v),
-              ),
-            ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Skill Title *',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Difficulty Level *', style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              DropdownField<String>(
-                value: _difficulty,
-                hint: 'Select level',
-                items: _levels,
-                onChanged: (v) => setState(() => _difficulty = v),
-              ),
-            ]),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: _titleController,
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            decoration: const InputDecoration(
+              hintText: 'e.g., Logo Design in Figma',
+            ),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Please enter a title' : null,
           ),
-        ])
-      ]),
+          const SizedBox(height: 8),
+          const Text(
+            'Make it clear and specific',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Description *',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: _descriptionController,
+            minLines: 5,
+            maxLines: 7,
+            textInputAction: TextInputAction.newline,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              hintText:
+                  "Describe what you'll teach, your experience, and what students will learn...",
+            ),
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter a description'
+                : null,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Be detailed about what you'll cover",
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Category *',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownField<String>(
+                      value: _category,
+                      hint: 'Select category',
+                      items: _categories,
+                      onChanged: (v) => setState(() => _category = v),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Difficulty Level *',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownField<String>(
+                      value: _difficulty,
+                      hint: 'Select level',
+                      items: _levels,
+                      onChanged: (v) => setState(() => _difficulty = v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   // ------------------ Details card content ------------------
   Widget _buildDetailsCardContent() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Estimated Hours', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _hoursController,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-              decoration: const InputDecoration(hintText: '1'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Estimated Hours',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _hoursController,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    decoration: const InputDecoration(hintText: '1'),
+                  ),
+                ],
+              ),
             ),
-          ]),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Delivery Format', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            DropdownField<String>(
-              value: _delivery,
-              hint: 'Remote Only',
-              items: _deliveryOptions,
-              onChanged: (v) => setState(() => _delivery = v ?? _delivery),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Delivery Format',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownField<String>(
+                    value: _delivery,
+                    hint: 'Remote Only',
+                    items: _deliveryOptions,
+                    onChanged: (v) =>
+                        setState(() => _delivery = v ?? _delivery),
+                  ),
+                ],
+              ),
             ),
-          ]),
+          ],
         ),
-      ]),
-
-      const SizedBox(height: 16),
-
-      const Text('Tags', style: TextStyle(fontWeight: FontWeight.w600)),
-      const SizedBox(height: 8),
-      Row(children: [
-        Expanded(
-          child: TextField(
-            controller: _tagController,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _addTag(),
-            decoration: const InputDecoration(hintText: 'Add a tag...'),
-          ),
+        const SizedBox(height: 16),
+        const Text('Tags', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _tagController,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _addTag(),
+                decoration: const InputDecoration(hintText: 'Add a tag...'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _addTag,
+              icon: const Icon(Icons.add, color: Colors.white),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(accentPurple),
+                padding: MaterialStateProperty.all(const EdgeInsets.all(12)),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: _addTag,
-          icon: const Icon(Icons.add, color: Colors.white),
-          style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(accentPurple),
-            padding: MaterialStateProperty.all(const EdgeInsets.all(12)),
-            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: _tags
+              .map(
+                (t) => Chip(
+                  label: Text(t),
+                  onDeleted: () => setState(() => _tags.remove(t)),
+                  backgroundColor: Colors.white10,
+                ),
+              )
+              .toList(),
         ),
-      ]),
-      const SizedBox(height: 8),
-      Wrap(spacing: 8, children: _tags.map((t) => Chip(label: Text(t), onDeleted: () => setState(() => _tags.remove(t)), backgroundColor: Colors.white10)).toList()),
-
-      const SizedBox(height: 16),
-
-      const Text("What You'll Deliver", style: TextStyle(fontWeight: FontWeight.w600)),
-      const SizedBox(height: 8),
-      Row(children: [
-        Expanded(
-          child: TextField(
-            controller: _deliverableController,
-            onSubmitted: (_) => _addDeliverable(),
-            decoration: const InputDecoration(hintText: 'e.g., 3 logo concepts with revisions...'),
-          ),
+        const SizedBox(height: 16),
+        const Text(
+          "What You'll Deliver",
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: _addDeliverable,
-          icon: const Icon(Icons.add, color: Colors.white),
-          style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(accentPurple),
-            padding: MaterialStateProperty.all(const EdgeInsets.all(12)),
-            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _deliverableController,
+                onSubmitted: (_) => _addDeliverable(),
+                decoration: const InputDecoration(
+                  hintText: 'e.g., 3 logo concepts with revisions...',
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _addDeliverable,
+              icon: const Icon(Icons.add, color: Colors.white),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(accentPurple),
+                padding: MaterialStateProperty.all(const EdgeInsets.all(12)),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ]),
-      const SizedBox(height: 8),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _deliverables.map((d) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(color: cardColor.withOpacity(.8), borderRadius: BorderRadius.circular(10)),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: Text(d)), IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _deliverables.remove(d)))]),
-          )).toList()),
-    ]);
+        const SizedBox(height: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _deliverables
+              .map(
+                (d) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cardColor.withOpacity(.8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(d)),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () =>
+                            setState(() => _deliverables.remove(d)),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
   }
 }
 
@@ -509,20 +780,84 @@ class PostSkillRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'description': description,
-        'category': category,
-        'difficulty': difficulty,
-        'estimatedHours': estimatedHours,
-        'deliveryFormat': deliveryFormat,
-        'tags': tags,
-        'deliverables': deliverables,
-      };
+    'title': title,
+    'description': description,
+    'category': category,
+    'difficulty': difficulty,
+    'estimatedHours': estimatedHours,
+    'deliveryFormat': deliveryFormat,
+    'tags': tags,
+    'deliverables': deliverables,
+  };
 }
 
-// ------------------ Sidebar Navigation (self-contained) ------------------
+// ------------------ Top bar (NO notifications here) ------------------
+class _TopBarNoNotifications extends StatelessWidget {
+  const _TopBarNoNotifications();
+
+  @override
+  Widget build(BuildContext context) {
+    // Keeping structure simple; no bell/badge.
+    return const SizedBox(
+      height: 44,
+      child: Row(children: [Expanded(child: SizedBox())]),
+    );
+  }
+}
+
+// ------------------ Reusable DropdownField ------------------
+class DropdownField<T> extends StatelessWidget {
+  const DropdownField({
+    Key? key,
+    required this.value,
+    required this.hint,
+    required this.items,
+    required this.onChanged,
+  }) : super(key: key);
+
+  final T? value;
+  final String hint;
+  final List<String> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: cardColor.withOpacity(.65),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: Row(
+          children: [
+            Expanded(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                dropdownColor: cardColor,
+                hint: Text(hint, style: const TextStyle(color: Colors.white70)),
+                items: items
+                    .map(
+                      (s) => DropdownMenuItem<T>(value: s as T, child: Text(s)),
+                    )
+                    .toList(),
+                onChanged: onChanged,
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------ Sidebar Navigation (aligned with HomePage) ------------------
 class SidebarNav extends StatelessWidget {
-  const SidebarNav({Key? key, this.activeLabel, this.badgeRequests}) : super(key: key);
+  const SidebarNav({Key? key, this.activeLabel, this.badgeRequests})
+    : super(key: key);
 
   final String? activeLabel;
   final String? badgeRequests;
@@ -530,102 +865,202 @@ class SidebarNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 260,
-      decoration: const BoxDecoration(color: Color(0xFF0E0E10), border: Border(right: BorderSide(color: Color(0xFF1F2937)))),
-      child: Column(children: [
-        const SizedBox(height: 12),
-        // Logo
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(children: [
-            Container(width: 36, height: 36, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)), child: const Center(child: Text('Swap', style: TextStyle(fontSize: 11)))),
-            const SizedBox(width: 12),
-            const Text('Swap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-          ]),
-        ),
-        const SizedBox(height: 18),
-        _navItem(context, Icons.home_rounded, 'Home', onTap: () {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }),
-        _navItem(context, Icons.explore_outlined, 'Discover'),
-        _navItem(context, Icons.add_circle_outline, 'Post Skill', active: activeLabel == 'Post Skill', onTap: () {}),
-        _navItem(context, Icons.inbox_outlined, 'Requests', badge: badgeRequests),
-        _navItem(context, Icons.analytics_outlined, 'Dashboard'),
-        _navItem(context, Icons.person_outline, 'Profile'),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Container(
-            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1F2937))),
-            padding: const EdgeInsets.all(16),
-            child: Column(children: [
-              const Align(alignment: Alignment.centerLeft, child: Text('Share Your Skills', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
-              const SizedBox(height: 6),
-              const Align(alignment: Alignment.centerLeft, child: Text('Start earning by helping others learn', style: TextStyle(color: Colors.white70, fontSize: 12))),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: FilledButton(
-                  onPressed: () {},
-                  style: FilledButton.styleFrom(backgroundColor: accentPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Post a Skill'),
+      width: 240, // match HomePage
+      decoration: const BoxDecoration(
+        color: Color(0xFF0E0E10),
+        border: Border(right: BorderSide(color: Color(0xFF1F2937))),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          // Logo (same sizing as HomePage sidebar)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                height: 70,
+                child: Image.asset(
+                  'assets/Swap-removebg-preview.png',
+                  fit: BoxFit.contain,
                 ),
-              )
-            ]),
+              ),
+            ),
           ),
-        ),
-      ]),
+          const Divider(color: Color(0xFF1F2937), height: 1),
+          const SizedBox(height: 12),
+          _navItem(
+            context,
+            Icons.home_rounded,
+            'Home',
+            active: (activeLabel ?? '') == 'Home',
+            onTap: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomePage()),
+                (route) => false,
+              );
+            },
+          ),
+
+          _navItem(
+            context,
+            Icons.explore_outlined,
+            'Discover',
+            active: (activeLabel ?? '') == 'Discover',
+          ),
+          _navItem(
+            context,
+            Icons.add_circle_outline,
+            'Post Skill',
+            active: (activeLabel ?? '') == 'Post Skill',
+            onTap: () {},
+          ),
+          _navItem(
+            context,
+            Icons.inbox_outlined,
+            'Requests',
+            badge: badgeRequests,
+            active: (activeLabel ?? '') == 'Requests',
+          ),
+          _navItem(
+            context,
+            Icons.analytics_outlined,
+            'Dashboard',
+            active: (activeLabel ?? '') == 'Dashboard',
+          ),
+          _navItem(
+            context,
+            Icons.person_outline,
+            'Profile',
+            active: (activeLabel ?? '') == 'Profile',
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF1F2937)),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Share Your Skills',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Start earning by helping others learn',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: FilledButton(
+                      onPressed: () {},
+                      style: FilledButton.styleFrom(
+                        backgroundColor: accentPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Post a Skill'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _navItem(BuildContext context, IconData icon, String label, {bool active = false, String? badge, VoidCallback? onTap}) {
+  Widget _navItem(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    bool active = false,
+    String? badge,
+    VoidCallback? onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 6, 10, 6),
-      decoration: BoxDecoration(color: active ? Colors.white10 : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: active ? const Color(0x201A1333) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
         leading: Icon(icon, color: active ? accentPurple : Colors.white70),
-        title: Text(label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.w700 : FontWeight.w600)),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : Colors.white70,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
         trailing: badge == null
             ? null
-            : Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF164E63), borderRadius: BorderRadius.circular(999)), child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 12))),
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF164E63),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    height: 1,
+                  ),
+                ),
+              ),
         onTap: onTap,
       ),
     );
   }
 }
 
-// ------------------ Top bar with search + bell ------------------
-class TopBarWithSearch extends StatelessWidget {
-  const TopBarWithSearch({Key? key}) : super(key: key);
+class TopBarNoNotifications extends StatelessWidget {
+  const TopBarNoNotifications({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      // Title placeholder (keeps alignment where search used to be)
-      const Expanded(child: SizedBox()),
-      // Notification icon with badge (default 3)
-      Stack(alignment: Alignment.topRight, children: [
-        IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, size: 28)),
-        Positioned(
-          right: 6,
-          top: 6,
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(color: Colors.red.shade700, shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-          ),
-        )
-      ])
-    ]);
+    // Keeping structure simple; no bell/badge.
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: const [
+          // Left spacer so content below aligns nicely
+          Expanded(child: SizedBox()),
+        ],
+      ),
+    );
   }
 }
 
 // ------------------ Generic section card widget ------------------
 class SectionCard extends StatelessWidget {
-  const SectionCard({Key? key, required this.title, required this.child, this.leading}) : super(key: key);
+  const SectionCard({
+    Key? key,
+    required this.title,
+    required this.child,
+    this.leading,
+  }) : super(key: key);
 
   final String title;
   final Widget child;
@@ -640,11 +1075,26 @@ class SectionCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                          Row(children: [if (leading != null) leading!, const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-          const SizedBox(height: 16),
-          child,
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (leading != null) leading!,
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -657,26 +1107,62 @@ class ProTipsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF231C35), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF231C35),
+        borderRadius: BorderRadius.circular(12),
+      ),
       padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: const [Icon(Icons.lightbulb, color: accentPurple), SizedBox(width: 8), Text('Pro Tips', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))]),
-        const SizedBox(height: 12),
-        _bullet('Be specific about what you\'ll teach'),
-        _bullet('Include examples of your work'),
-        _bullet('Set realistic time estimates'),
-        _bullet('Use relevant tags for discovery'),
-        _bullet('Respond quickly to build trust'),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.lightbulb, color: accentPurple),
+              SizedBox(width: 8),
+              Text(
+                'Pro Tips',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _bullet('Be specific about what you\'ll teach'),
+          _bullet('Include examples of your work'),
+          _bullet('Set realistic time estimates'),
+          _bullet('Use relevant tags for discovery'),
+          _bullet('Respond quickly to build trust'),
+        ],
+      ),
     );
   }
 
-  Widget _bullet(String text) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('• ', style: TextStyle(fontSize: 16, color: Colors.white70)), Expanded(child: Text(text, style: const TextStyle(color: Colors.white70)))]));
+  Widget _bullet(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('• ', style: TextStyle(fontSize: 16, color: Colors.white70)),
+        Expanded(
+          child: Text(text, style: const TextStyle(color: Colors.white70)),
+        ),
+      ],
+    ),
+  );
 }
 
 // ------------------ Preview Card ------------------
 class PreviewCard extends StatelessWidget {
-  const PreviewCard({Key? key, required this.title, required this.description, required this.category, required this.hours, required this.mode}) : super(key: key);
+  const PreviewCard({
+    Key? key,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.hours,
+    required this.mode,
+  }) : super(key: key);
 
   final String title;
   final String description;
@@ -691,48 +1177,52 @@ class PreviewCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(999)), child: Text(category, style: const TextStyle(color: Colors.white70, fontSize: 12))),
-          const SizedBox(height: 8),
-          Text(title.isEmpty ? 'Your skill title' : title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(description.isEmpty ? 'Your description will appear here' : description, style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 8),
-          Row(children: [const Icon(Icons.access_time, size: 14, color: Colors.white70), const SizedBox(width: 6), Text('${hours}h', style: const TextStyle(color: Colors.white70, fontSize: 12)), const SizedBox(width: 12), const Icon(Icons.public, size: 14, color: Colors.white70), const SizedBox(width: 6), Text(mode, style: const TextStyle(color: Colors.white70, fontSize: 12))]),
-        ]),
-      ),
-    );
-  }
-}
-
-// ------------------ Reusable DropdownField ------------------
-class DropdownField<T> extends StatelessWidget {
-  const DropdownField({Key? key, required this.value, required this.hint, required this.items, required this.onChanged}) : super(key: key);
-
-  final T? value;
-  final String hint;
-  final List<String> items;
-  final ValueChanged<T?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: cardColor.withOpacity(.65), border: Border.all(color: Colors.white12)),
-      child: DropdownButtonHideUnderline(
-        child: Row(children: [
-          Expanded(
-            child: DropdownButton<T>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: cardColor,
-              hint: Text(hint, style: const TextStyle(color: Colors.white70)),
-              items: items.map((s) => DropdownMenuItem<T>(value: s as T, child: Text(s))).toList(),
-              onChanged: onChanged,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white12,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                category,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ),
-          ),
-          const Icon(Icons.keyboard_arrow_down, color: Colors.white70),
-        ]),
+            const SizedBox(height: 8),
+            Text(
+              title.isEmpty ? 'Your skill title' : title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              description.isEmpty
+                  ? 'Your description will appear here'
+                  : description,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.white70),
+                const SizedBox(width: 6),
+                Text(
+                  '${hours}h',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.public, size: 14, color: Colors.white70),
+                const SizedBox(width: 6),
+                Text(
+                  mode,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

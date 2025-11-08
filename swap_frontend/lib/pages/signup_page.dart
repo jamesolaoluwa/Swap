@@ -499,9 +499,6 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-/// -------------------- 3D PANEL --------------------
-/// Duplicated here so this file is self-contained.
-/// Uses the same 3D hamburger .glb asset as your login page.
 class _Rainbow3DPanel extends StatelessWidget {
   const _Rainbow3DPanel({this.maxSide});
   final double? maxSide;
@@ -545,8 +542,7 @@ class _Rainbow3D extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ModelViewer(
-      src:
-          'assets/Hamburger.glb', // ensure this asset exists & is in pubspec.yaml
+      src: 'assets/icon.glb',
       alt: '3D rainbow blob',
       autoRotate: true,
       autoRotateDelay: 0,

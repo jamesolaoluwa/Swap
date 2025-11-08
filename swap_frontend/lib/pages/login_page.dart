@@ -451,7 +451,7 @@ class _Rainbow3D extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ModelViewer(
-      src: 'assets/Hamburger.glb',
+      src: 'assets/icon.glb',
       alt: '3D rainbow blob',
       autoRotate: true,
       autoRotateDelay: 0,

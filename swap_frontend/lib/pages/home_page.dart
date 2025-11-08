@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'landing_page.dart';
 import 'post_skill_page.dart';
 import '../services/auth_service.dart';
+import '../widgets/app_sidebar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -85,12 +86,11 @@ class HomePage extends StatelessWidget {
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _Sidebar(),
-            // Right side: Top bar + content
+            const AppSidebar(active: 'Home'),
             Expanded(
               child: Column(
                 children: [
-                  _TopBar(), // custom top bar
+                  _TopBar(),
                   Expanded(child: _DiscoverPane()),
                 ],
               ),
@@ -136,9 +136,15 @@ class _Sidebar extends StatelessWidget {
           const SizedBox(height: 12),
           _NavItem(icon: Icons.home_rounded, label: 'Home', active: true),
           _NavItem(icon: Icons.explore_outlined, label: 'Discover'),
-          _NavItem(icon: Icons.add_circle_outline, label: 'Post Skill', onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PostSkillPage()));
-          }),
+          _NavItem(
+            icon: Icons.add_circle_outline,
+            label: 'Post Skill',
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const PostSkillPage()));
+            },
+          ),
           _NavItem(icon: Icons.inbox_outlined, label: 'Requests', badge: '2'),
           _NavItem(icon: Icons.analytics_outlined, label: 'Dashboard'),
           _NavItem(icon: Icons.person_outline, label: 'Profile'),
@@ -174,12 +180,16 @@ class _Sidebar extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
-                            width: double.infinity,
-                            height: 44,
-                            child: FilledButton(
-                              onPressed: () {
-                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PostSkillPage()));
-                              },
+                    width: double.infinity,
+                    height: 44,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PostSkillPage(),
+                          ),
+                        );
+                      },
                       style: FilledButton.styleFrom(
                         backgroundColor: HomePage.accent,
                         foregroundColor: Colors.white,
@@ -253,7 +263,7 @@ class _NavItem extends StatelessWidget {
                   ),
                 ),
               ),
-  onTap: onTap,
+        onTap: onTap,
       ),
     );
   }
