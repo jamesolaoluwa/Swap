@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import '../services/auth_service.dart';
 import 'login_page.dart';
+import 'onboarding.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -101,9 +102,7 @@ class _SignUpPageState extends State<SignUpPage> {
       );
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const LoginPage(),
-          ), // Replace LoginPage with your actual login page widget
+          MaterialPageRoute(builder: (_) => const ProfileSetupFlow()),
         );
       }
     } catch (e) {
@@ -183,12 +182,6 @@ class _SignUpPageState extends State<SignUpPage> {
   // ------- UI Pieces below -------
 
   Widget _SignUpCard() {
-    final gradient = const LinearGradient(
-      colors: [Color(0xFF7A00FF), Color(0xFF9E00FF)],
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-    );
-
     InputDecoration deco(String label, IconData icon) => InputDecoration(
       prefixIcon: Icon(icon, color: Colors.grey),
       labelText: label,

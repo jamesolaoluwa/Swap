@@ -2,14 +2,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_page.dart';
 
 class ProfileSetupFlow extends StatefulWidget {
   const ProfileSetupFlow({super.key});
   @override
   State<ProfileSetupFlow> createState() => _ProfileSetupFlowState();
 }
-
-/* ----------------------------- Theme & models ----------------------------- */
 
 class _ProfileSetupFlowState extends State<ProfileSetupFlow> {
   // ---- Theme (dark + purple)
@@ -27,11 +29,6 @@ class _ProfileSetupFlowState extends State<ProfileSetupFlow> {
   static const double kMaxContentWidth = 880;
 
   // simple model for entries
-  static Map<String, dynamic> entryToMap(SkillEntry e) => {
-    'name': e.name,
-    'category': e.category,
-    'level': e.level,
-  };
 
   /* --------------------------------- Form --------------------------------- */
   final _formKey = GlobalKey<FormState>();
@@ -84,6 +81,58 @@ class _ProfileSetupFlowState extends State<ProfileSetupFlow> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingUserData();
+  }
+
+  Future<void> _loadExistingUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Get user data from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!mounted) return;
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          // Pre-fill form with existing data
+          if (data['fullName'] != null) _fullName.text = data['fullName'];
+          if (data['displayName'] != null) _fullName.text = data['displayName'];
+          if (data['username'] != null) _username.text = data['username'];
+          if (data['bio'] != null) _bio.text = data['bio'];
+          if (data['city'] != null) _city.text = data['city'];
+          if (data['timezone'] != null) _timezone = data['timezone'];
+
+          // Set preferences if they exist
+          if (data['dmOpen'] != null) _dmOpen = data['dmOpen'];
+          if (data['emailUpdates'] != null)
+            _emailUpdates = data['emailUpdates'];
+          if (data['showCity'] != null) _showCity = data['showCity'];
+        });
+      }
+
+      // Also check Firebase Auth data
+      if (user.displayName != null && _fullName.text.isEmpty) {
+        _fullName.text = user.displayName!;
+      }
+      if (user.email != null && _username.text.isEmpty) {
+        // Create a username suggestion from email
+        final emailName = user.email!.split('@')[0];
+        _username.text = emailName.replaceAll(RegExp(r'[^a-zA-Z0-9_\.]'), '_');
+      }
+    } catch (e) {
+      print('Error loading existing user data: $e');
+    }
+  }
+
   Future<void> _pickAvatar() async {
     final x = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -109,21 +158,104 @@ class _ProfileSetupFlowState extends State<ProfileSetupFlow> {
     }
   }
 
-  void _submit() {
-    final payload = {
-      'fullName': _fullName.text.trim(),
-      'username': _username.text.trim(),
-      'bio': _bio.text.trim(),
-      'city': _city.text.trim(),
-      'timezone': _timezone,
-      'skillsOffer': _offer.map(entryToMap).toList(),
-      'servicesNeed': _need.map(entryToMap).toList(),
-      'dmOpen': _dmOpen,
-      'emailUpdates': _emailUpdates,
-      'showCity': _showCity,
-      // avatar: _avatar
-    };
-    Navigator.pop(context, payload);
+  Future<void> _submit() async {
+    try {
+      print('Starting profile submission...');
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('Error: No user is currently signed in');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: No user is signed in')),
+        );
+        return;
+      }
+      print('Current user ID: ${user.uid}');
+
+      // Upload avatar if selected
+      String? photoUrl;
+      if (_avatar != null) {
+        print('Uploading avatar...');
+        try {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('user_avatars')
+              .child('${user.uid}.jpg');
+
+          await ref.putFile(_avatar!);
+          photoUrl = await ref.getDownloadURL();
+          print('Avatar uploaded successfully. URL: $photoUrl');
+        } catch (e) {
+          print('Error uploading avatar: $e');
+          // Continue with profile update even if avatar upload fails
+        }
+      }
+
+      print('Preparing data for Firestore update...');
+      final userData = {
+        'fullName': _fullName.text.trim(),
+        'username': _username.text.trim(),
+        'bio': _bio.text.trim(),
+        'city': _city.text.trim(),
+        'timezone': _timezone,
+        'skillsToOffer': _offer
+            .map(
+              (e) => {'name': e.name, 'category': e.category, 'level': e.level},
+            )
+            .toList(),
+        'servicesNeeded': _need
+            .map(
+              (e) => {'name': e.name, 'category': e.category, 'level': e.level},
+            )
+            .toList(),
+        'dmOpen': _dmOpen,
+        'emailUpdates': _emailUpdates,
+        'showCity': _showCity,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+      };
+      print('Data prepared: $userData');
+
+      // Update profile in Firestore
+      print('Updating Firestore...');
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set(userData, SetOptions(merge: true));
+      print('Firestore update successful');
+
+      // Update display name in Firebase Auth
+      if (_fullName.text.isNotEmpty) {
+        print('Updating display name...');
+        await user.updateDisplayName(_fullName.text.trim());
+        print('Display name updated');
+      }
+
+      // Update photo URL in Firebase Auth
+      if (photoUrl != null) {
+        print('Updating photo URL...');
+        await user.updatePhotoURL(photoUrl);
+        print('Photo URL updated');
+      }
+
+      print('Profile setup completed successfully!');
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully!')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } catch (e, stackTrace) {
+      print('Error in _submit: $e');
+      print('Stack trace: $stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
+    }
   }
 
   @override

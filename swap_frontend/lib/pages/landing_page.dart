@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import 'signup_page.dart';
 import 'onboarding.dart';
 
 class LandingPage extends StatelessWidget {
@@ -157,9 +158,9 @@ class _NavBar extends StatelessWidget {
             // Purple CTA
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileSetupFlow()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const SignUpPage()));
               },
               icon: const Icon(Icons.arrow_forward_rounded, size: 18),
               label: const Text('Get Started'),
