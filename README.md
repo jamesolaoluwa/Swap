@@ -1,9 +1,12 @@
-### TL;DR 🚨
+# $wap
 
-# Swap
-
-![Swap app screenshot placeholder](https://user-images.githubusercontent.com/placeholder/400x800.png)
-![Swap app screenshot placeholder 2](https://user-images.githubusercontent.com/placeholder/400x800-2.png)
+<img width="1411" height="625" alt="Screenshot 2025-11-08 at 1 12 02 AM" src="https://github.com/user-attachments/assets/78ca44bf-da91-40f6-87ad-34f9039469d5" />
+<img width="1411" height="394" alt="Screenshot 2025-11-08 at 1 14 13 AM" src="https://github.com/user-attachments/assets/759a45b7-3e87-41f8-85ac-462b0f4aa8fa" />
+<img width="1512" height="855" alt="Screenshot 2025-11-08 at 1 02 41 AM" src="https://github.com/user-attachments/assets/80a62cd2-2c5b-40ee-9871-e04365dee102" />
+<img width="1195" height="761" alt="Screenshot 2025-11-08 at 1 05 32 AM" src="https://github.com/user-attachments/assets/251be873-25f8-4cdc-9bc7-f48cbf093c52" />
+<img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 08 AM" src="https://github.com/user-attachments/assets/47d7ac78-e97e-47f1-b782-7f0a9d0dce6b" />
+<img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 40 AM" src="https://github.com/user-attachments/assets/ddd18e3c-41d1-4bbe-b69e-5660e0367ccb" />
+<img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 47 AM" src="https://github.com/user-attachments/assets/fe64da47-431d-4636-94c0-6d2795b4b39f" />
 
 ## Challenge Statement(s) Addressed 🎯
 We built Swap to help people share and monetize short, teachable skills in a trusted community marketplace. Primary challenge statements we targeted:
@@ -13,7 +16,7 @@ We built Swap to help people share and monetize short, teachable skills in a tru
 - How might we reduce friction for onboarding, discovery, and secure transactions for peer-to-peer skill exchange?
 
 ## Project Description 🤯
-Swap is a dark-themed, responsive web app where users can post short teachable skills, browse offerings, and request services from creators. The app includes an onboarding flow, a dashboard, a discover grid, and a post-skill form that captures title, description, logistics, tags, and deliverables.
+$wap is a dark-themed, responsive web app where users can post short teachable skills, browse offerings, and request services from creators. The app includes an onboarding flow, a dashboard, a discover grid, and a post-skill form that captures title, description, logistics, tags, and deliverables.
 
 How it works (high level):
 
