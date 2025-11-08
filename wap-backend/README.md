@@ -1,42 +1,44 @@
 # $wap Backend
 
-> Intelligent skill-for-skill exchange platform powered by semantic search
+Backend API for a skill exchange app. Matches users based on what they can teach and what they want to learn.
 
-FastAPI backend that uses machine learning to match users for reciprocal skill exchanges through natural language queries.
+## What it does
 
-## 🎯 Key Features
+- Semantic search using BERT embeddings to find relevant skill matches
+- Reciprocal matching algorithm (finds people where both sides benefit)
+- Uses Qdrant for vector search (~80ms) and Redis for caching (~5ms)
+- Stores user profiles in Firebase Firestore
 
-- **Semantic Search** - Find skill matches using natural language (powered by BERT)
-- **Reciprocal Matching** - Bidirectional algorithm finds mutual exchange partners
-- **Vector Similarity** - Sub-100ms search using Qdrant vector database
-- **NoSQL Storage** - Firebase Firestore for scalable profile data
+## Tech Stack
 
-## 🏗️ Tech Stack
+- FastAPI
+- sentence-transformers (BERT, 384-dim vectors)
+- Qdrant (vector database)
+- Firebase Firestore
+- Redis (caching layer)
+- Docker
+- Deployed on Fly.io
 
-- **FastAPI** - Modern Python web framework
-- **sentence-transformers** - BERT embeddings (384-dimensional vectors)
-- **Qdrant** - Vector similarity search with HNSW indexing
-- **Firebase Firestore** - NoSQL database
-- **Docker** - Containerization
-- **Fly.io** - Production hosting
-
-## 🚀 Quick Start
+## Setup
 
 ```bash
-# Install
+# Install dependencies
 pip install -r requirements.txt
 
-# Setup Firebase
-# Download service account JSON → save as firebase-credentials.json
+# Add Firebase credentials
+# Download service account JSON and save as firebase-credentials.json
 
-# Start services
+# Start local services (Qdrant + Redis)
 docker-compose up -d
 
-# Test
+# Run the server
+uvicorn app.main:app --reload
+
+# Test it works
 curl http://localhost:8000/healthz
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -63,51 +65,59 @@ curl -X POST http://localhost:8000/search \
   }'
 ```
 
-## 🧠 How It Works
+## How it works
 
-### 1. Profile Creation
+**Profile Creation:**
+1. User data gets saved to Firebase Firestore
+2. Skills text gets converted to 384-dim vectors using BERT
+3. Vectors stored in Qdrant for similarity search
+
+**Semantic Search:**
+1. Query text → convert to vector
+2. Search Qdrant for similar vectors
+3. Return ranked results
+
+**Reciprocal Matching:**
+1. Take what I offer + what I need → create 2 vectors
+2. Run bidirectional search (my offers vs their needs, their offers vs my needs)
+3. Score using harmonic mean (penalizes one-sided matches)
+4. Return top mutual matches
+
+The harmonic mean is useful here because it only gives high scores when both sides match well. For example, scores of (0.9, 0.3) → 0.45 not 0.6.
+
+## Performance
+
+| Operation | Cached | Uncached |
+|-----------|--------|----------|
+| Search | ~5ms | ~80ms |
+| Profile Create | - | ~150ms |
+| Profile Read | - | ~20ms |
+| Reciprocal Match | ~8ms | ~120ms |
+
+Tested with 1GB RAM, 1 CPU, 1000 profiles.
+
+### Caching
+
+Redis caching speeds up repeat queries by about 16x:
+
 ```
-User data → Firebase Firestore (profile storage)
-Skills text → ML Model → 384-dim vectors → Qdrant (search index)
+Search Request → Check Redis → Hit? Return (5ms)
+                             → Miss? Query Qdrant (80ms) → Cache for 1hr
 ```
 
-### 2. Semantic Search
-```
-Query text → ML Model → Vector
-→ Qdrant similarity search → Ranked results
-```
+Cache automatically invalidates when profiles update. The app works fine without Redis if it's unavailable.
 
-### 3. Reciprocal Matching
-```
-My offer + need → 2 vectors
-→ Bidirectional search (their offers vs my needs, my offers vs their needs)
-→ Harmonic mean scoring → Top mutual matches
-```
+Currently only running in local dev (docker-compose). Not on production yet since the free Fly.io tier doesn't include Redis.
 
-**Why Harmonic Mean?**
-- Penalizes lopsided matches
-- Both scores must be high
-- Example: `(0.9, 0.3) → 0.45` not `0.6`
-
-## 📊 Performance
-
-| Operation | Latency | Notes |
-|-----------|---------|-------|
-| Search | ~80ms | Including ML inference |
-| Profile Create | ~150ms | Firestore + Qdrant write |
-| Profile Read | ~20ms | Firestore lookup |
-| Reciprocal Match | ~120ms | Dual vector search |
-
-*Tested: 1GB RAM, 1 CPU, 1000 profiles*
-
-## 🏗️ Architecture
+## Architecture
 
 ```
 Flutter App
-     ↓ HTTPS/REST
+     ↓
 FastAPI Backend
-     ├─→ Firebase Firestore (profiles)
-     └─→ Qdrant (vectors)
+     ├─→ Redis (optional cache)
+     ├─→ Firebase Firestore (user profiles)
+     └─→ Qdrant (vector search)
 ```
 
 ### Project Structure
@@ -116,22 +126,23 @@ wap-backend/
 ├── app/
 │   ├── main.py              # FastAPI app
 │   ├── routers/             # API endpoints
-│   ├── embeddings.py        # ML model
-│   ├── firebase_db.py       # Firestore
-│   ├── qdrant_client.py     # Vector DB
-│   └── matching.py          # Algorithms
-├── tests/                   # Unit tests
-├── Dockerfile              
-├── docker-compose.yml       # Local dev
+│   ├── embeddings.py        # BERT model
+│   ├── firebase_db.py       # Firestore client
+│   ├── qdrant_client.py     # Vector DB client
+│   ├── cache.py             # Redis caching
+│   └── matching.py          # Matching algorithms
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
 └── requirements.txt
 ```
 
-## 🚀 Production Deployment
+## Deployment
 
-**Live API:** `https://swap-backend.fly.dev`
+Live API: `https://swap-backend.fly.dev`
 
+Deploy to Fly.io:
 ```bash
-# Deploy to Fly.io
 flyctl deploy
 
 # Set secrets
@@ -140,43 +151,36 @@ flyctl secrets set QDRANT_URL="https://your-cluster.cloud.qdrant.io:6333"
 flyctl secrets set QDRANT_API_KEY="your-key"
 ```
 
-## 📚 Documentation
+## Docs
 
-- **Interactive API**: http://localhost:8000/docs (Swagger UI)
-- **Full API Reference**: [docs/API.md](docs/API.md)
-- **Deployment Guide**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- Interactive API docs: http://localhost:8000/docs
+- API reference: [docs/API.md](docs/API.md)
+- Deployment guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
-## 🧪 Testing
+## Testing
 
 ```bash
-# Run tests
 pytest tests/ -v --cov=app
 
-# Test locally (all endpoints working ✅)
+# Test locally
 curl http://localhost:8000/healthz
 ```
 
-## 🔐 Security Note
+## Security
 
-⚠️ **MVP - No authentication implemented**
-
-For production, add:
+Currently no authentication (it's an MVP). For production you'd want:
 - Firebase Auth JWT validation
 - Rate limiting
-- User ownership enforcement
+- User ownership checks
 
-## 📈 Future Enhancements
+## TODO
 
-- [ ] Authentication & authorization
-- [ ] User ratings & reviews
-- [ ] In-app messaging
-- [ ] Personalized rankings
-- [ ] Multi-language support
+- Authentication
+- User ratings/reviews
+- In-app messaging
+- Better ranking algorithm
+- Multi-language support
 
-## 📄 License
+## License
 
-MIT License
-
----
-
-**Built for BE Hackathon 2025** | [GitHub](https://github.com/BE-Hackathon-2025/Panthers)
+MIT

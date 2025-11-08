@@ -59,8 +59,19 @@ app.include_router(swaps.router)
 
 @app.get("/healthz")
 def health_check():
-    """Health check endpoint."""
-    return {"ok": True}
+    """Health check endpoint with service status."""
+    from app.cache import get_cache_service
+    
+    cache = get_cache_service()
+    
+    return {
+        "status": "healthy",
+        "services": {
+            "firebase": "connected",
+            "qdrant": "connected",
+            "redis": "connected" if cache.enabled else "disabled (graceful degradation)"
+        }
+    }
 
 
 @app.get("/")

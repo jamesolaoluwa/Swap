@@ -7,6 +7,7 @@ pydantic[email]==2.5.0
 sentence-transformers==2.7.0
 qdrant-client==1.7.0
 python-dotenv==1.0.0
+redis==5.0.1
 
 # Testing dependencies
 pytest==7.4.3

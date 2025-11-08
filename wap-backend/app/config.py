@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     vector_dim: int = 384  # MiniLM uses 384 dimensions (vs 768 for BERT)
     
+    # Redis Cache (optional - disabled in production by default)
+    redis_enabled: bool = True  # Set to False to disable caching
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_ttl: int = 3600  # Cache TTL in seconds (1 hour)
+    redis_url: Optional[str] = None  # Full URL for managed Redis (e.g., Upstash)
+    
     # App
     app_name: str = "$wap"
     debug: bool = False

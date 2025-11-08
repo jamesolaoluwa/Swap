@@ -8,6 +8,7 @@ from app.schemas import ProfileCreate, ProfileUpdate, ProfileResponse
 from app.firebase_db import get_firebase_service
 from app.embeddings import get_embedding_service
 from app.qdrant_client import get_qdrant_service
+from app.cache import get_cache_service
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -80,6 +81,12 @@ def upsert_profile(profile_data: ProfileCreate):
             need_vec=need_vec,
             payload=payload,
         )
+    
+    # Invalidate search cache when profile changes
+    cache_service = get_cache_service()
+    cleared = cache_service.clear_pattern("search:*")
+    if cleared > 0:
+        print(f"🗑️  Cleared {cleared} cached search results (profile updated)")
     
     return ProfileResponse(**saved_profile)
 
