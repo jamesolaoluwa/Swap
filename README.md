@@ -688,7 +688,7 @@ Email: amy@gmail.com
 Password: Test123!
 
 ### Link to Demo Presentation
-- placeholder: https://your-presentation-link
+- [Please Click Link To View $wap Presentation Slide Deck](https://www.canva.com/design/DAG4GwjXjNQ/DCrCyXnAYUTkC1wzsE5hSw/edit?utm_content=DAG4GwjXjNQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ### Team Checklist
 - [x] Team photo
