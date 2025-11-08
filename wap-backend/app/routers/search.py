@@ -1,6 +1,6 @@
 """Search endpoints."""
 
-from typing import List, Literal
+from typing import List, Literal, Dict, Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -115,4 +115,115 @@ def search_profiles(request: SearchRequest):
     cache_service.set(cache_key, combined_list, ttl=3600)
     
     return [ProfileSearchResult(**result) for result in combined_list]
+
+
+class SkillRecommendationRequest(BaseModel):
+    """Request for skill recommendations."""
+    
+    current_skills: str = Field(..., min_length=1, description="User's current skills or interests")
+    limit: int = Field(5, ge=1, le=20, description="Number of recommendations")
+
+
+class SkillRecommendation(BaseModel):
+    """A recommended skill."""
+    
+    skill: str
+    score: float
+    reason: str
+
+
+@router.post("/recommend-skills", response_model=List[SkillRecommendation])
+def recommend_skills(request: SkillRecommendationRequest):
+    """
+    Recommend complementary skills based on user's current skills.
+    
+    Analyzes what skills are commonly learned together by finding profiles
+    with similar skills and extracting their other skills.
+    
+    Example:
+        Input: "Python programming"
+        Output: ["SQL databases", "Docker", "Git version control", ...]
+    """
+    cache_service = get_cache_service()
+    embedding_service = get_embedding_service()
+    qdrant_service = get_qdrant_service()
+    
+    # Try cache first
+    cache_key = cache_service._generate_key(
+        "skill_recommend",
+        {"skills": request.current_skills, "limit": request.limit}
+    )
+    
+    cached = cache_service.get(cache_key)
+    if cached:
+        print(f"✅ Cache HIT: Skill recommendations for '{request.current_skills}'")
+        return [SkillRecommendation(**rec) for rec in cached]
+    
+    print(f"❌ Cache MISS: Generating skill recommendations for '{request.current_skills}'")
+    
+    # Encode the current skills
+    query_vec = embedding_service.encode(request.current_skills)
+    
+    # Search for people with similar skills (both offers and needs)
+    similar_offers = qdrant_service.search_offers(
+        query_vec=query_vec,
+        limit=20,
+        score_threshold=0.4,
+    )
+    
+    similar_needs = qdrant_service.search_needs(
+        query_vec=query_vec,
+        limit=20,
+        score_threshold=0.4,
+    )
+    
+    # Extract and rank complementary skills
+    skill_frequencies: Dict[str, Dict[str, Any]] = {}
+    
+    # Process offers (what people can teach)
+    for profile in similar_offers:
+        offers = profile.get("skills_to_offer", "")
+        if offers and offers.strip():
+            # Simple extraction: split by common delimiters
+            skills = [s.strip() for s in offers.replace(",", ".").split(".") if s.strip()]
+            for skill in skills[:5]:  # Limit to first 5 skills per profile
+                if skill and len(skill) > 10:  # Only meaningful skills
+                    if skill not in skill_frequencies:
+                        skill_frequencies[skill] = {"count": 0, "total_score": 0.0}
+                    skill_frequencies[skill]["count"] += 1
+                    skill_frequencies[skill]["total_score"] += profile.get("score", 0.5)
+    
+    # Process needs (what people want to learn - indicates trending skills)
+    for profile in similar_needs:
+        needs = profile.get("services_needed", "")
+        if needs and needs.strip():
+            skills = [s.strip() for s in needs.replace(",", ".").split(".") if s.strip()]
+            for skill in skills[:5]:
+                if skill and len(skill) > 10:
+                    if skill not in skill_frequencies:
+                        skill_frequencies[skill] = {"count": 0, "total_score": 0.0}
+                    skill_frequencies[skill]["count"] += 1
+                    skill_frequencies[skill]["total_score"] += profile.get("score", 0.5) * 0.8  # Weight needs slightly lower
+    
+    # Rank by frequency and relevance
+    recommendations = []
+    for skill, data in skill_frequencies.items():
+        avg_score = data["total_score"] / max(data["count"], 1)
+        combined_score = (data["count"] * 0.3) + (avg_score * 0.7)  # Balance frequency and relevance
+        
+        reason = f"Common among {data['count']} similar profiles"
+        recommendations.append({
+            "skill": skill,
+            "score": round(combined_score, 3),
+            "reason": reason
+        })
+    
+    # Sort by combined score and take top N
+    recommendations.sort(key=lambda x: x["score"], reverse=True)
+    recommendations = recommendations[:request.limit]
+    
+    # Cache for 2 hours
+    cache_service.set(cache_key, recommendations, ttl=7200)
+    
+    return [SkillRecommendation(**rec) for rec in recommendations]
 

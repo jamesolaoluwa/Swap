@@ -46,6 +46,7 @@ curl http://localhost:8000/healthz
 | `/profiles/upsert` | POST | Create/update profile |
 | `/profiles/{uid}` | GET | Get profile |
 | `/search` | POST | Semantic search (3 modes) |
+| `/search/recommend-skills` | POST | Get skill recommendations |
 | `/match/reciprocal` | POST | Find mutual matches |
 
 ### Search Modes
@@ -64,6 +65,50 @@ curl -X POST http://localhost:8000/search \
     "limit": 5
   }'
 ```
+
+### Skill Recommendations
+
+Get personalized skill recommendations based on what you already know.
+
+**Endpoint:** `POST /search/recommend-skills`
+
+**How it works:**
+1. Analyzes profiles with similar skills to yours
+2. Extracts complementary skills that commonly appear together
+3. Ranks by frequency and relevance
+4. Returns top recommendations with reasoning
+
+**Request:**
+```bash
+curl -X POST http://localhost:8000/search/recommend-skills \
+  -H "Content-Type: application/json" \
+  -d '{
+    "current_skills": "Python programming and web development",
+    "limit": 5
+  }'
+```
+
+**Response:**
+```json
+[
+  {
+    "skill": "SQL databases and data modeling",
+    "score": 0.845,
+    "reason": "Common among 12 similar profiles"
+  },
+  {
+    "skill": "Docker containerization", 
+    "score": 0.732,
+    "reason": "Common among 8 similar profiles"
+  }
+]
+```
+
+**Features:**
+- Cached for 2 hours (fast repeat queries)
+- Analyzes both what people teach and want to learn
+- Smart scoring: balances frequency (how common) + relevance (how similar)
+- Filters out short/vague skills
 
 ## How it works
 

@@ -137,6 +137,7 @@ Built with FastAPI and machine learning for smart skill matching.
 **Backend Features:**
 - Semantic search using BERT (finds skills by meaning, not just keywords)
 - Reciprocal matching algorithm (finds mutual exchanges)
+- Skill recommendation engine (suggests complementary skills)
 - Fast vector similarity search (~80ms, ~5ms with cache)
 - Redis caching layer (16x speedup on repeat queries)
 - 384-dimensional embeddings for each skill
@@ -447,7 +448,67 @@ curl -X POST https://swap-backend.fly.dev/search \
 
 ---
 
-#### 4. Reciprocal Matching API
+#### 4. Skill Recommendation API
+
+**Endpoint:** `POST /search/recommend-skills`
+
+Get personalized skill recommendations based on what you already know. Analyzes profiles with similar skills and suggests complementary skills that are commonly learned together.
+
+**Algorithm:**
+1. Encode your current skills using BERT
+2. Search for profiles with similar skill sets
+3. Extract skills from those profiles (both what they offer and need)
+4. Rank by frequency and relevance score
+5. Return top recommendations
+
+**Request:**
+```json
+{
+  "current_skills": "Python programming and web development",
+  "limit": 5
+}
+```
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "skill": "SQL databases and data modeling",
+    "score": 0.845,
+    "reason": "Common among 12 similar profiles"
+  },
+  {
+    "skill": "Docker containerization and deployment",
+    "score": 0.732,
+    "reason": "Common among 8 similar profiles"
+  },
+  {
+    "skill": "Git version control and collaboration",
+    "score": 0.698,
+    "reason": "Common among 10 similar profiles"
+  }
+]
+```
+
+**Try it:**
+```bash
+curl -X POST https://swap-backend.fly.dev/search/recommend-skills \
+  -H "Content-Type: application/json" \
+  -d '{
+    "current_skills": "JavaScript and React development",
+    "limit": 5
+  }'
+```
+
+**Features:**
+- Cached for 2 hours for fast repeat queries
+- Smart scoring balances frequency and semantic relevance
+- Filters out vague or too-short skills
+- Useful for skill gap analysis and learning path planning
+
+---
+
+#### 5. Reciprocal Matching API
 
 **Endpoint:** `POST /match/reciprocal`
 
