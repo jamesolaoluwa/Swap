@@ -1,200 +1,305 @@
 # Deployment Guide
 
-## Quick Deploy to Fly.io
+## Prerequisites
 
-### 1. Manual Deploy (Current Changes)
+- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Fly.io CLI](https://fly.io/docs/hands-on/install-flyctl/)
+- Firebase service account JSON
+- Qdrant Cloud account (free tier)
 
-From the `wap-backend` directory, run:
+---
+
+## Local Development
+
+### 1. Setup Firebase
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Go to **Project Settings** → **Service Accounts**
+4. Click **Generate New Private Key**
+5. Save as `firebase-credentials.json` in `wap-backend/`
+
+### 2. Start Services
+
+```bash
+cd wap-backend
+
+# Start FastAPI + Qdrant
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop
+docker-compose down
+```
+
+### 3. Test
+
+```bash
+# Health check
+curl http://localhost:8000/healthz
+
+# Create profile
+curl -X POST http://localhost:8000/profiles/upsert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uid": "test_user",
+    "email": "test@example.com",
+    "display_name": "Test User",
+    "skills_to_offer": "Python",
+    "services_needed": "Guitar"
+  }'
+
+# Search
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "guitar", "limit": 5}'
+```
+
+**API Docs**: http://localhost:8000/docs
+
+---
+
+## Production Deployment (Fly.io)
+
+### 1. Setup Qdrant Cloud
+
+1. Go to [cloud.qdrant.io](https://cloud.qdrant.io)
+2. Create free cluster
+3. Note the **URL** and **API Key**
+
+### 2. Setup Fly.io
+
+```bash
+# Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Login
+flyctl auth login
+
+# Launch app (first time only)
+cd wap-backend
+flyctl launch
+
+# Follow prompts:
+# - App name: swap-backend (or your choice)
+# - Region: Choose closest to users
+# - Postgres? No
+# - Deploy now? No (we need to set secrets first)
+```
+
+### 3. Set Secrets
+
+```bash
+# Firebase credentials
+flyctl secrets set FIREBASE_CREDENTIALS_JSON="$(cat firebase-credentials.json)"
+
+# Qdrant Cloud
+flyctl secrets set QDRANT_URL="https://your-cluster.cloud.qdrant.io:6333"
+flyctl secrets set QDRANT_API_KEY="your-api-key-here"
+```
+
+### 4. Deploy
 
 ```bash
 flyctl deploy
 ```
 
-This will:
-- Build your Docker image remotely on Fly.io
-- Deploy the new version to your `swap-backend` app
-- Run health checks to ensure it starts properly
+**Deployment takes 2-3 minutes.**
 
-**Check status:**
+### 5. Verify
+
 ```bash
+# Check status
 flyctl status
-flyctl logs
-```
 
-**Test the live endpoint:**
-```bash
-curl https://swap-backend.fly.dev/healthz
-```
-
----
-
-## Set Up GitHub Actions CI/CD
-
-### One-Time Setup
-
-**1. Get your Fly.io API Token**
-
-```bash
-flyctl auth token
-```
-
-This will print your API token. Copy it.
-
-**2. Add token to GitHub Secrets**
-
-- Go to your GitHub repo: https://github.com/otitoudedibor/Panthers
-- Navigate to: **Settings** → **Secrets and variables** → **Actions**
-- Click **New repository secret**
-- Name: `FLY_API_TOKEN`
-- Value: Paste the token from step 1
-- Click **Add secret**
-
-**3. Push your code**
-
-```bash
-cd /Users/otitoudedibor/Documents/GitHub/Panthers/wap-backend
-git add .
-git commit -m "feat: add semantic search modes and CI/CD"
-git push origin main
-```
-
-**4. Watch the deployment**
-
-- Go to: https://github.com/otitoudedibor/Panthers/actions
-- You'll see a workflow running called "Deploy to Fly.io"
-- Click it to watch logs in real-time
-- Once it completes (green checkmark), your app is live!
-
----
-
-## How CI/CD Works
-
-Once set up, **every push to `main`** will:
-1. Trigger the GitHub Actions workflow (`.github/workflows/deploy.yml`)
-2. Build the Docker image on Fly.io's builders
-3. Deploy to your `swap-backend` app
-4. Run health checks
-5. Notify you if deployment fails
-
-**To disable auto-deploy temporarily:**
-- Just comment out the `on: push:` section in `.github/workflows/deploy.yml`
-
----
-
-## Environment Variables on Fly.io
-
-Your app currently has these set via `fly.toml`:
-```toml
-[env]
-  QDRANT_HOST = 'qdrant.internal'
-  QDRANT_PORT = '6333'
-```
-
-**To add Firebase credentials:**
-
-```bash
-# Set the Firebase credentials JSON as a secret (won't be visible in logs)
-flyctl secrets set FIREBASE_CREDENTIALS_JSON="$(cat path/to/serviceAccount.json)"
-```
-
-**View current secrets:**
-```bash
-flyctl secrets list
-```
-
----
-
-## Scaling & Performance
-
-**Current config (fly.toml):**
-- Memory: 1GB
-- CPU: 1 shared vCPU
-- Min machines: 0 (auto-sleep when idle)
-- Auto-start: true
-
-**To increase memory if needed:**
-```bash
-flyctl scale memory 2048  # 2GB
-```
-
-**To keep 1 machine always running (no cold starts):**
-Edit `fly.toml`:
-```toml
-min_machines_running = 1
-```
-
-Then redeploy:
-```bash
-flyctl deploy
-```
-
----
-
-## Troubleshooting Deployments
-
-**Deployment fails or times out:**
-```bash
-# View build logs
+# View logs
 flyctl logs
 
+# Test health
+curl https://your-app.fly.dev/healthz
+```
+
+---
+
+## Environment Variables
+
+### Local (Docker)
+Set in `docker-compose.yml`:
+```yaml
+environment:
+  - FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
+  - QDRANT_HOST=qdrant
+  - QDRANT_PORT=6333
+```
+
+### Production (Fly.io)
+Set via secrets:
+```bash
+FIREBASE_CREDENTIALS_JSON    # Full JSON string
+QDRANT_URL                   # https://cluster.cloud.qdrant.io:6333
+QDRANT_API_KEY               # Your Qdrant API key
+```
+
+---
+
+## Troubleshooting
+
+### Local Issues
+
+**Docker not found:**
+```bash
+# Install Docker Desktop
+brew install --cask docker
+# Launch Docker Desktop from Applications
+```
+
+**Port 8000 in use:**
+```bash
+# Find and kill process
+lsof -ti:8000 | xargs kill -9
+```
+
+**Qdrant connection error:**
+```bash
+# Check Qdrant is running
+docker ps | grep qdrant
+
+# Restart services
+docker-compose restart
+```
+
+### Production Issues
+
+**502 Bad Gateway:**
+```bash
+# Check logs
+flyctl logs
+
+# Common causes:
+# 1. Model loading timeout (first request slow)
+# 2. Out of memory
+# 3. Missing secrets
+
+# Increase timeout in fly.toml:
+[[http_service.checks]]
+  timeout = '10s'
+  grace_period = '60s'
+```
+
+**Service Unavailable:**
+```bash
 # Check app status
 flyctl status
 
-# SSH into the machine
-flyctl ssh console
-
-# Restart the app
+# Restart app
 flyctl apps restart swap-backend
+
+# Check secrets are set
+flyctl secrets list
 ```
 
-**Out of Memory (OOM) errors:**
-- Increase VM memory: `flyctl scale memory 2048`
-- Or optimize the model loading in `app/main.py`
-
-**Qdrant not working on Fly.io:**
-- Verify Qdrant is running: check Fly.io dashboard for both `swap-backend` and `qdrant` apps
-- Ensure `QDRANT_HOST=qdrant.internal` in `fly.toml` env section
+**Slow first request:**
+- ML model loads on startup (see `app/main.py` lifespan)
+- First request after deploy may take 5-10s
+- Subsequent requests fast (~80ms)
 
 ---
 
-## Rollback
+## Scaling
 
-If a deployment breaks production:
+### Vertical (More Resources)
+
+Edit `fly.toml`:
+```toml
+[[vm]]
+  memory = '2gb'  # Increase from 1gb
+  cpu_kind = 'shared'
+  cpus = 2        # Increase from 1
+```
+
+Deploy:
+```bash
+flyctl deploy
+```
+
+### Horizontal (More Machines)
 
 ```bash
-# List recent releases
-flyctl releases
+# Scale to 2 machines
+flyctl scale count 2
 
-# Rollback to previous version
-flyctl releases rollback
+# Auto-scale
+flyctl autoscale set min=1 max=3
 ```
 
 ---
 
 ## Monitoring
 
-**View real-time logs:**
+### Fly.io Dashboard
+- https://fly.io/dashboard
+- View metrics: CPU, memory, requests
+- Check machine status
+
+### Logs
 ```bash
-flyctl logs -a swap-backend
+# Tail logs
+flyctl logs
+
+# Specific machine
+flyctl logs -i MACHINE_ID
 ```
 
-**Check metrics:**
+### Health Check
 ```bash
-flyctl dashboard -a swap-backend
-```
+# Production
+curl https://your-app.fly.dev/healthz
 
-Or visit: https://fly.io/dashboard
+# Local
+curl http://localhost:8000/healthz
+```
 
 ---
 
-## Cost
+## Updating
 
-- **Free tier:** 3 shared-cpu-1x VMs with 256MB RAM
-- **Your setup:** 1GB RAM = ~$1.94/month (prorated)
-- **No charges when machines are stopped** (auto_stop_machines = true)
+### Code Changes
 
-Check current usage:
 ```bash
-flyctl info
+# Local: Rebuild
+docker-compose up -d --build
+
+# Production: Redeploy
+flyctl deploy
 ```
+
+### Secrets
+
+```bash
+flyctl secrets set KEY="new-value"
+# App automatically restarts
+```
+
+---
+
+## Costs
+
+### Free Tier (Fly.io)
+- 3 shared-cpu-1x machines
+- 256MB RAM each
+- 160GB outbound data/month
+
+**Your app uses:**
+- 1 machine (1GB RAM, 1 CPU)
+- ~$5-10/month estimate
+
+### Qdrant Cloud
+- Free tier: 1GB storage
+- Sufficient for ~10,000 profiles
+
+---
+
+*For API documentation, see [API.md](API.md)*
 
