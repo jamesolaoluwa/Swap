@@ -9,20 +9,41 @@
 <img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 47 AM" src="https://github.com/user-attachments/assets/fe64da47-431d-4636-94c0-6d2795b4b39f" />
 
 ## Challenge Statement(s) Addressed 🎯
-We built Swap to help people share and monetize short, teachable skills in a trusted community marketplace. Primary challenge statements we targeted:
 
-- How might we provide an accessible, discoverable marketplace for people to teach and trade short skills locally and remotely?
-- How might we enable creators to package micro-services (skills) with clear deliverables and pricing so buyers can quickly find the right tutor or contributor?
-- How might we reduce friction for onboarding, discovery, and secure transactions for peer-to-peer skill exchange?
+In Arkansas, thousands of people have talent, but limited access to opportunity. Small businesses make up **99.3% of all enterprises (≈ 258,000)**, yet the state still ranks **40th out of 51** in overall economic activity.
 
-## Project Description 🤯
-$wap is a dark-themed, responsive web app where users can post short teachable skills, browse offerings, and request services from creators. The app includes an onboarding flow, a dashboard, a discover grid, and a post-skill form that captures title, description, logistics, tags, and deliverables.
+Rising costs mean many small business owners skip professional services — not because they lack vision, but because every dollar goes toward staying open. At the same time, college students and freelancers across Little Rock possess valuable skills they can’t fully use or afford to market.  
 
-How it works (high level):
+The problem isn’t a lack of ability. it’s a **lack of access**.  
 
-- Creators sign up, describe a skill, and list deliverables, estimated hours, availability, and tags.
-- Seekers browse the discover page or search, preview a listing, then request or book the service.
-- The platform facilitates messaging/requests and (optionally) payment flow (placeholder for payment provider).
+**$wap** addresses this by asking:  
+- How might we help communities unlock value without relying on money?  
+- How might we turn *“what you can do”* into *“what you need”*?  
+- How might AI connect people so skills never go unused?
+  
+## 💡 Project Description  
+
+**$wap** is an AI-powered skill-exchange platform that lets people **trade skills instead of cash**. It creates a new, inclusive economy where your abilities — not your wallet — open doors.  
+
+### 🧠 How It Works  
+1. **Create a Profile** — List the skills you can offer and what you need.  
+2. **AI Matchmaking** — Machine learning pairs you with users whose skills and availability fit yours.  
+3. **Swap Fairly** — Exchange services, time, or expertise — no money required.  
+4. **Earn & Redeem Credits** — Every successful swap earns credibility and “swap credits.”  
+5. **Build Trust** — Ratings and feedback verify quality and accountability.  
+
+### 💬 Example  
+A college student in Little Rock who codes websites can trade with a hairstylist who needs a site.  
+She builds the website; he braids her hair.  
+No cash — just community, fair value, and mutual growth.
+
+## 🌍 Why It Matters to Little Rock and Arkansas  
+
+- **Small Business Owners** often skip marketing or tech services because every dollar counts.  
+- **College Students** need real-world experience but can’t afford mentorship or tools.  
+- **Freelancers & Creators** have skills that sit idle without capital or visibility.  
+
+By turning skills into currency, **$wap activates Arkansas’s underused talent** and fosters a local economy built on collaboration and trust — not cash.
 
 ## Project Value 💰
 Target users:
