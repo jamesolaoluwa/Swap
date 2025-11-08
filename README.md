@@ -45,17 +45,18 @@ No cash — just community, fair value, and mutual growth.
 
 By turning skills into currency, **$wap activates Arkansas’s underused talent** and fosters a local economy built on collaboration and trust — not cash.
 
-## Project Value 💰
-Target users:
+## 💎 Unique Value Proposition  
 
-- Primary: independent creators, freelancers, and hobbyists who want to teach or sell short services.
-- Secondary: people seeking fast, affordable, targeted instruction or delivery of small tasks.
+Traditional freelance platforms require money, subscriptions, and transaction fees.  
+**$wap reimagines value exchange as reciprocity, not currency.**  
 
-Benefits:
+- No middlemen — only fair exchange.  
+- No barriers — anyone can start with what they know.  
+- No limits — skills build community wealth.  
 
-- For Creators: quick listing flow, discoverability via tags, and built-in deliverable templates to reduce friction posting services.
-- For Buyers: concise previews, clear deliverables, and simple request workflow to reduce time-to-purchase.
-- For Communities: enables micro-entrepreneurship and skill-sharing in local and remote contexts.
+For **small businesses**, it means affordable growth.  
+For **freelancers**, it means stronger portfolios and networks.  
+For **college students**, it means real-world experience without debt. 
 
 ## 💻 Tech Overview & Tech Stack
 
