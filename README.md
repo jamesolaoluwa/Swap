@@ -9,8 +9,8 @@
 <img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 47 AM" src="https://github.com/user-attachments/assets/fe64da47-431d-4636-94c0-6d2795b4b39f" />
 <img width="1536" height="1024" alt="Swap Profile Overview" src="https://github.com/user-attachments/assets/bbbe51be-83bb-4be9-b5bc-c6826a8674c5" />
 
-##Sumamary of my contributions to this project
-Built as a team project during the BE Hackathon 2025. I contributed primarily to frontend architecture and AI backend integration.
+## Summary of my contributions to this project
+$wap was built as a team project during the BE Smart Hackathon 2025. I contributed primarily to frontend architecture and AI backend integration.
 
 ## Challenge Statement
 
