@@ -7,7 +7,10 @@
 <img width="1436" height="778" alt="Screenshot 2025-11-08 at 7 14 36 AM" src="https://github.com/user-attachments/assets/0e23fb65-6192-4ca3-93c1-fd05b677a514" />
 <img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 40 AM" src="https://github.com/user-attachments/assets/ddd18e3c-41d1-4bbe-b69e-5660e0367ccb" />
 <img width="1507" height="863" alt="Screenshot 2025-11-08 at 1 06 47 AM" src="https://github.com/user-attachments/assets/fe64da47-431d-4636-94c0-6d2795b4b39f" />
-<img width="1435" height="774" alt="Screenshot 2025-11-08 at 7 17 15 AM" src="https://github.com/user-attachments/assets/4b1aef8f-1c44-44f8-b499-87c2050991be" />
+<img width="1536" height="1024" alt="Swap Profile Overview" src="https://github.com/user-attachments/assets/bbbe51be-83bb-4be9-b5bc-c6826a8674c5" />
+
+##Sumamary of my contributions to this project
+Built as a team project during the BE Hackathon 2025. I contributed primarily to frontend architecture and AI backend integration.
 
 ## Challenge Statement
 
