@@ -10,7 +10,7 @@
 <img width="1536" height="1024" alt="Swap Profile Overview" src="https://github.com/user-attachments/assets/bbbe51be-83bb-4be9-b5bc-c6826a8674c5" />
 
 ## Summary of my contributions to this project
-$wap was built as a team project during the BE Smart Hackathon 2025. I contributed primarily to frontend architecture and AI backend integration.
+$wap was built as a team project during the BE Smart Hackathon 2025. I mainly worked on building the frontend architecture and the integrating the AI and backend. More details on the system architecture and design approaches can be found below ⬇️.
 
 ## Challenge Statement
 
