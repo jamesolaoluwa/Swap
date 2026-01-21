@@ -709,10 +709,3 @@ Philander Smith University
 
 ### Team Name
 Panthers
-
-### Contributors
-* Immanuella Emem Umoren
-* Kenna Agbugba
-* Otito Udedibor
-* Olaoluwa James-Owolabi
-* Emmanuella Turkson
