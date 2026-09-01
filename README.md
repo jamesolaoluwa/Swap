@@ -691,4 +691,4 @@ Email: amy@gmail.com
 Password: Test123!
 
 ### Link to Case Study Deck
-- [Please Click Link To View $wap's Case Study Deck]([https://www.canva.com/design/DAG4GwjXjNQ/DCrCyXnAYUTkC1wzsE5hSw/edit?utm_content=DAG4GwjXjNQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton](https://canva.link/v0v8darzb2iuesb))
+- [Please Click Link To View $wap's Case Study Deck](https://canva.link/v0v8darzb2iuesb)
