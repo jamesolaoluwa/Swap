@@ -10,7 +10,7 @@
 <img width="1536" height="1024" alt="Swap Profile Overview" src="https://github.com/user-attachments/assets/bbbe51be-83bb-4be9-b5bc-c6826a8674c5" />
 
 ## Summary of my contributions to this project
-$wap was built as a team project during the BE Smart Hackathon 2025. I mainly worked on building the frontend architecture and the integrating the AI and backend. More details on the system architecture and design approaches can be found below ⬇️.
+$wap started as a team project during the BE Smart Hackathon 2025 but has since grown into a project with massive backing and funding from the global startup community. In this project, I(Olaoluwa) mainly worked on building the frontend architecture and the integrating the AI and backend. More details on the system architecture and design approaches can be found below ⬇️.
 
 ## Challenge Statement
 
@@ -690,22 +690,5 @@ Email: amy@gmail.com
 
 Password: Test123!
 
-### Link to Demo Presentation
-- [Please Click Link To View $wap Presentation Slide Deck](https://www.canva.com/design/DAG4GwjXjNQ/DCrCyXnAYUTkC1wzsE5hSw/edit?utm_content=DAG4GwjXjNQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
-
-### Team Checklist
-- [x] Team photo
-- [x] Team Slack channel
-- [x] Communication established with mentor
-- [x] Repo created from template
-- [x] Flight Deck / Hangar registration (placeholder)
-
-### Project Checklist
-- [x] Presentation complete and linked  (placeholder)
-- [x] Code merged to main branch
-
-### School Name
-Philander Smith University
-
-### Team Name
-Panthers
+### Link to Case Study Deck
+- [Please Click Link To View $wap Presentation Slide Deck]([https://www.canva.com/design/DAG4GwjXjNQ/DCrCyXnAYUTkC1wzsE5hSw/edit?utm_content=DAG4GwjXjNQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton](https://canva.link/v0v8darzb2iuesb))
