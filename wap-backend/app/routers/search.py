@@ -1,14 +1,14 @@
 """Search endpoints."""
 
 from typing import List, Literal, Dict, Any, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.schemas import ProfileSearchResult, SkillSearchResult
 from app.embeddings import get_embedding_service
 from app.azure_search import get_azure_search_service, get_skills_search_service
 from app.cache import get_cache_service
-from app.firebase_db import get_firebase_service
+from app.cosmos_db import get_cosmos_service
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -313,7 +313,7 @@ def reindex_user(request: ReindexUserRequest):
     Returns:
         Success status and message
     """
-    firebase_service = get_firebase_service()
+    cosmos_service = get_cosmos_service()
     embedding_service = get_embedding_service()
     azure_search_service = get_azure_search_service()
     
@@ -321,12 +321,12 @@ def reindex_user(request: ReindexUserRequest):
     
     try:
         # Get user profile
-        profile = firebase_service.get_profile(uid)
+        profile = cosmos_service.get_profile(uid)
         if not profile:
             raise HTTPException(status_code=404, detail=f"Profile not found for uid: {uid}")
         
         # Get skills from skills collection (single source of truth)
-        user_skills = firebase_service.get_skills_by_user(uid)
+        user_skills = cosmos_service.get_skills_by_user(uid)
         skills_to_offer = _skills_to_text(user_skills) if user_skills else None
         
         # Fallback to profile.skillsToOffer for backwards compat

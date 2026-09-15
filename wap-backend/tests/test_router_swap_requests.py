@@ -56,13 +56,17 @@ class TestCreateSwapRequest:
         )
         assert resp.status_code == 422
 
-    def test_missing_offer_returns_422(self, client):
+    def test_missing_offer_is_allowed(self, client):
+        # requester_offer is optional (skill-centric / indirect swaps), so a
+        # request without it is accepted rather than rejected with 422.
+        _create_profile(client, "u1")
+        _create_profile(client, "u2")
         resp = client.post(
             "/swap-requests",
             params={"requester_uid": "u1"},
             json={"recipient_uid": "u2", "requester_need": "Guitar"},
         )
-        assert resp.status_code == 422
+        assert resp.status_code == 200
 
     def test_missing_need_returns_422(self, client):
         resp = client.post(

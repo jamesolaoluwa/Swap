@@ -1,4 +1,4 @@
-name: Frontend — Build & Deploy
+name: Frontend — Build
 
 on:
   push:
@@ -12,17 +12,16 @@ on:
       - 'swap_frontend/**'
 
 env:
-  FLUTTER_VERSION: '3.24.0'
+  FLUTTER_VERSION: '3.35.5'
   API_BASE_URL: 'https://app-swapai-backend.azurewebsites.net'
   ENTRA_TENANT_NAME: 'swapauth'
   ENTRA_REDIRECT_URI: 'https://stwa-swap-dev.azurestaticapps.net/'
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  # ── 1. Build Flutter Web ────────────────────────────────────────────────────
+  # ── Build Flutter Web ────────────────────────────────────────────────────────
   build:
     name: Build Flutter Web
     runs-on: ubuntu-latest
@@ -60,40 +59,3 @@ jobs:
           name: flutter-web-build
           path: swap_frontend/build/web/
           retention-days: 1
-
-  # ── 2. Deploy to Azure Static Web Apps ──────────────────────────────────────
-  deploy:
-    name: Deploy to Static Web Apps
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-
-    steps:
-      - uses: actions/checkout@v4  # Required by the SWA action
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: flutter-web-build
-          path: swap_frontend/build/web/
-
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: 'upload'
-          app_location: 'swap_frontend/build/web'
-          skip_app_build: true  # Already built above
-          output_location: ''
-
-      - name: Smoke test
-        run: |
-          sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://stwa-swap-dev.azurestaticapps.net/)
-          echo "Frontend health check returned: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::warning::Frontend returned $STATUS (may still be propagating)"
-          fi

@@ -14,10 +14,10 @@ class TestComputeReciprocalMatches:
         mock_embedding.encode.return_value = [0.1] * 1536
 
         mock_search = MagicMock()
-        mock_search.search.side_effect = [
-            search_results_offer or [],
-            search_results_need or [],
-        ]
+        # matching.py searches other people's *needs* with my offer vector, and
+        # other people's *offers* with my need vector.
+        mock_search.search_needs.return_value = search_results_need or []
+        mock_search.search_offers.return_value = search_results_offer or []
         return mock_embedding, mock_search
 
     def test_returns_list(self):
@@ -50,7 +50,7 @@ class TestComputeReciprocalMatches:
             compute_reciprocal_matches("Python", "Guitar")
             assert mock_emb.encode.call_count == 2
 
-    def test_calls_search_twice(self):
+    def test_searches_offers_and_needs_once_each(self):
         mock_emb, mock_srch = self._mock_services()
         with (
             patch("app.matching.get_embedding_service", return_value=mock_emb),
@@ -58,7 +58,8 @@ class TestComputeReciprocalMatches:
         ):
             from app.matching import compute_reciprocal_matches
             compute_reciprocal_matches("Python", "Guitar")
-            assert mock_srch.search.call_count == 2
+            assert mock_srch.search_needs.call_count == 1
+            assert mock_srch.search_offers.call_count == 1
 
     def test_reciprocal_match_includes_both_parties(self):
         offer_results = [
@@ -78,7 +79,8 @@ class TestComputeReciprocalMatches:
         mock_emb = MagicMock()
         mock_emb.encode.return_value = [0.1] * 1536
         mock_srch = MagicMock()
-        mock_srch.search.side_effect = [offer_results, need_results]
+        mock_srch.search_offers.return_value = offer_results
+        mock_srch.search_needs.return_value = need_results
 
         with (
             patch("app.matching.get_embedding_service", return_value=mock_emb),
@@ -103,7 +105,8 @@ class TestComputeReciprocalMatches:
         mock_emb = MagicMock()
         mock_emb.encode.return_value = [0.1] * 1536
         mock_srch = MagicMock()
-        mock_srch.search.side_effect = [offer_results, need_results]
+        mock_srch.search_offers.return_value = offer_results
+        mock_srch.search_needs.return_value = need_results
 
         with (
             patch("app.matching.get_embedding_service", return_value=mock_emb),
@@ -129,7 +132,8 @@ class TestComputeReciprocalMatches:
         mock_emb = MagicMock()
         mock_emb.encode.return_value = [0.1] * 1536
         mock_srch = MagicMock()
-        mock_srch.search.side_effect = [offer, need]
+        mock_srch.search_offers.return_value = offer
+        mock_srch.search_needs.return_value = need
 
         with (
             patch("app.matching.get_embedding_service", return_value=mock_emb),

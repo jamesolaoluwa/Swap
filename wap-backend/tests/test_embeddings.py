@@ -1,7 +1,21 @@
-"""Test embedding service."""
+"""Test embedding service.
+
+These are live integration tests that call the real Azure OpenAI embeddings
+endpoint. They are skipped unless real credentials are configured (the test
+suite otherwise runs with placeholder credentials from conftest).
+"""
+
+import os
 
 import pytest
+
 from app.embeddings import EmbeddingService
+
+_api_key = os.getenv("AZURE_OPENAI_API_KEY", "")
+pytestmark = pytest.mark.skipif(
+    not _api_key or _api_key.startswith("test"),
+    reason="Requires live Azure OpenAI credentials (placeholder key in CI)",
+)
 
 
 def test_embedding_service_initialization():

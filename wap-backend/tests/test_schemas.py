@@ -113,9 +113,11 @@ class TestSwapRequestCreate:
         with pytest.raises(ValidationError):
             SwapRequestCreate(requester_offer="x", requester_need="y")
 
-    def test_missing_offer_raises(self):
-        with pytest.raises(ValidationError):
-            SwapRequestCreate(recipient_uid="r1", requester_need="y")
+    def test_missing_offer_is_optional(self):
+        # requester_offer is optional (skill-centric / indirect swaps use
+        # requester_offer_skill_id or points instead of a free-text offer).
+        r = SwapRequestCreate(recipient_uid="r1", requester_need="y")
+        assert r.requester_offer is None
 
     def test_message_too_long_raises(self):
         with pytest.raises(ValidationError):

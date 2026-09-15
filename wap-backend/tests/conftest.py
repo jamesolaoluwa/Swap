@@ -23,12 +23,18 @@ def _install_azure_mocks():
     """Pre-populate sys.modules with stubs for Azure SDKs so import succeeds."""
     _azure = MagicMock()
 
-    # Cosmos exceptions must be real exception subclasses for try/except
+    # Cosmos exceptions must be real exception subclasses for try/except.
+    # Accept arbitrary kwargs (e.g. status_code=, message=) like the real SDK.
+    def _mock_err_init(self, *args, **kwargs):
+        for _k, _v in kwargs.items():
+            setattr(self, _k, _v)
+        Exception.__init__(self, *args)
+
     _azure.cosmos.exceptions.CosmosResourceNotFoundError = type(
-        "CosmosResourceNotFoundError", (Exception,), {}
+        "CosmosResourceNotFoundError", (Exception,), {"__init__": _mock_err_init}
     )
     _azure.cosmos.exceptions.CosmosHttpResponseError = type(
-        "CosmosHttpResponseError", (Exception,), {}
+        "CosmosHttpResponseError", (Exception,), {"__init__": _mock_err_init}
     )
 
     for mod_path in [
@@ -53,9 +59,14 @@ if "azure.cosmos" not in sys.modules:
 
 # ── Environment ───────────────────────────────────────────────────────────────
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_env():
-    """Configure env vars before any module is imported."""
+def _configure_test_env() -> None:
+    """Configure env vars.
+
+    Must run at import time (before any test module imports ``app.config``),
+    because ``app.config.settings`` is a module-level singleton frozen on first
+    import. Setting these in a fixture would be too late for collection-time
+    imports and would leave ``settings`` with default/production values.
+    """
     os.environ.setdefault("DEBUG", "true")
     os.environ.setdefault("REDIS_ENABLED", "false")
     os.environ.setdefault("EMAIL_ENABLED", "false")
@@ -68,6 +79,16 @@ def setup_test_env():
     os.environ.setdefault("AZURE_ENTRA_TENANT_ID", "test-tenant-id")
     os.environ.setdefault("AZURE_ENTRA_CLIENT_ID", "test-client-id")
     os.environ.setdefault("AZURE_ENTRA_AUDIENCE", "api://swap-api/access_as_user")
+
+
+# Run immediately at conftest import (before test modules import app.config).
+_configure_test_env()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_env():
+    """Ensure env vars are configured (idempotent with the import-time call)."""
+    _configure_test_env()
 
 
 # ── In-memory Cosmos-compatible store ─────────────────────────────────────────
@@ -180,10 +201,10 @@ class InMemoryStore:
 
     # ── Swap Requests ─────────────────────────────────────────────────────────
 
-    def create_swap_request(self, data: Dict) -> Dict:
+    def create_swap_request(self, requester_uid: str, data: Dict) -> Dict:
         doc_id = str(uuid.uuid4())
         now = _now()
-        doc = {"id": doc_id, "uid": data.get("requester_uid", ""), "created_at": now, "updated_at": now, **data}
+        doc = {"id": doc_id, "uid": requester_uid, "created_at": now, "updated_at": now, **data}
         self._swap_requests[doc_id] = doc
         return dict(doc)
 

@@ -61,7 +61,6 @@ def _enrich_swap_request(request_data: dict) -> SwapRequestResponse:
         **request_data,
         requester_profile=requester_profile,
         recipient_profile=recipient_profile,
-        completion=completion_data,
     )
 
 
@@ -180,6 +179,11 @@ def create_swap_request(
             "requester_need_skill_id": request.requester_need_skill_id,
         },
     )
+
+    # This endpoint creates direct/skill swaps; points-based (indirect) swaps
+    # are handled by the dedicated indirect-swap flow.
+    is_indirect = False
+    points_reserved = 0
 
     requester_profile = cosmos.get_profile(requester_uid)
     if recipient_profile.get("email_updates", True) and recipient_profile.get("email"):
