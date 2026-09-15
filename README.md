@@ -10,7 +10,7 @@
 <img width="1536" height="1024" alt="Swap Profile Overview" src="https://github.com/user-attachments/assets/bbbe51be-83bb-4be9-b5bc-c6826a8674c5" />
 
 ## Summary of my contributions to this project
-$wap started as a team project during the 2025 BE Smart Hackathon but has since grown into a project with massive backing and funding from the global startup community. In this project, I(Olaoluwa) mainly worked on building the frontend architecture, integrating the AI algorithms and designing the backend service's logic. More details on the system architecture and design approaches can be found below ⬇️.
+$wap started as a team project during the 2025 BE Smart Hackathon but has since grown into a project with massive backing and funding from the global startup community. In this project, I(Olaoluwa) mainly worked on building the frontend architecture, integrating the AI algorithms and designing the backend service's logic. If you want a quick summary, feel free to check the [case study deck](https://canva.link/8uek558igyvqfge). More details on the system architecture and design approaches can be found below.
 
 ## Challenge Statement
 
