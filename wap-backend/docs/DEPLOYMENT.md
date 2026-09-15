@@ -5,7 +5,8 @@
 - [Docker](https://www.docker.com/products/docker-desktop/)
 - [Fly.io CLI](https://fly.io/docs/hands-on/install-flyctl/)
 - Firebase service account JSON
-- Qdrant Cloud account (free tier)
+- Azure OpenAI account
+- Azure AI Search account
 
 ---
 
@@ -24,8 +25,8 @@
 ```bash
 cd wap-backend
 
-# Start FastAPI + Qdrant
-docker-compose up -d
+# Start FastAPI + Redis
+docker-compose up -d redis
 
 # View logs
 docker-compose logs -f app
@@ -63,11 +64,18 @@ curl -X POST http://localhost:8000/search \
 
 ## Production Deployment (Fly.io)
 
-### 1. Setup Qdrant Cloud
+### 1. Setup Azure Services
 
-1. Go to [cloud.qdrant.io](https://cloud.qdrant.io)
-2. Create free cluster
-3. Note the **URL** and **API Key**
+1. **Azure OpenAI:**
+
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Create an Azure OpenAI resource
+   - Deploy `text-embedding-3-small` model
+   - Note the **Endpoint** and **API Key**
+
+2. **Azure AI Search:**
+   - Create an Azure AI Search service
+   - Note the **Endpoint** and **Admin API Key**
 
 ### 2. Setup Fly.io
 
@@ -95,9 +103,15 @@ flyctl launch
 # Firebase credentials
 flyctl secrets set FIREBASE_CREDENTIALS_JSON="$(cat firebase-credentials.json)"
 
-# Qdrant Cloud
-flyctl secrets set QDRANT_URL="https://your-cluster.cloud.qdrant.io:6333"
-flyctl secrets set QDRANT_API_KEY="your-api-key-here"
+# Azure OpenAI
+flyctl secrets set AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+flyctl secrets set AZURE_OPENAI_API_KEY="your-key"
+flyctl secrets set AZURE_OPENAI_API_VERSION="2024-02-01"
+flyctl secrets set AZURE_EMBEDDING_DEPLOYMENT="text-embedding-3-small"
+
+# Azure AI Search
+flyctl secrets set AZURE_SEARCH_ENDPOINT="https://your-search.search.windows.net"
+flyctl secrets set AZURE_SEARCH_API_KEY="your-key"
 ```
 
 ### 4. Deploy
@@ -126,20 +140,26 @@ curl https://your-app.fly.dev/healthz
 ## Environment Variables
 
 ### Local (Docker)
+
 Set in `docker-compose.yml`:
+
 ```yaml
 environment:
   - FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
-  - QDRANT_HOST=qdrant
-  - QDRANT_PORT=6333
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
 ```
 
 ### Production (Fly.io)
+
 Set via secrets:
+
 ```bash
 FIREBASE_CREDENTIALS_JSON    # Full JSON string
-QDRANT_URL                   # https://cluster.cloud.qdrant.io:6333
-QDRANT_API_KEY               # Your Qdrant API key
+AZURE_OPENAI_ENDPOINT        # https://your-resource.openai.azure.com
+AZURE_OPENAI_API_KEY         # Your Azure OpenAI API key
+AZURE_SEARCH_ENDPOINT        # https://your-search.search.windows.net
+AZURE_SEARCH_API_KEY         # Your Azure AI Search API key
 ```
 
 ---
@@ -149,6 +169,7 @@ QDRANT_API_KEY               # Your Qdrant API key
 ### Local Issues
 
 **Docker not found:**
+
 ```bash
 # Install Docker Desktop
 brew install --cask docker
@@ -156,15 +177,18 @@ brew install --cask docker
 ```
 
 **Port 8000 in use:**
+
 ```bash
 # Find and kill process
 lsof -ti:8000 | xargs kill -9
 ```
 
-**Qdrant connection error:**
+**Azure connection error:**
+
 ```bash
-# Check Qdrant is running
-docker ps | grep qdrant
+# Check environment variables are set
+echo $AZURE_OPENAI_ENDPOINT
+echo $AZURE_SEARCH_ENDPOINT
 
 # Restart services
 docker-compose restart
@@ -173,6 +197,7 @@ docker-compose restart
 ### Production Issues
 
 **502 Bad Gateway:**
+
 ```bash
 # Check logs
 flyctl logs
@@ -189,6 +214,7 @@ flyctl logs
 ```
 
 **Service Unavailable:**
+
 ```bash
 # Check app status
 flyctl status
@@ -201,6 +227,7 @@ flyctl secrets list
 ```
 
 **Slow first request:**
+
 - ML model loads on startup (see `app/main.py` lifespan)
 - First request after deploy may take 5-10s
 - Subsequent requests fast (~80ms)
@@ -212,6 +239,7 @@ flyctl secrets list
 ### Vertical (More Resources)
 
 Edit `fly.toml`:
+
 ```toml
 [[vm]]
   memory = '2gb'  # Increase from 1gb
@@ -220,6 +248,7 @@ Edit `fly.toml`:
 ```
 
 Deploy:
+
 ```bash
 flyctl deploy
 ```
@@ -239,11 +268,13 @@ flyctl autoscale set min=1 max=3
 ## Monitoring
 
 ### Fly.io Dashboard
+
 - https://fly.io/dashboard
 - View metrics: CPU, memory, requests
 - Check machine status
 
 ### Logs
+
 ```bash
 # Tail logs
 flyctl logs
@@ -253,6 +284,7 @@ flyctl logs -i MACHINE_ID
 ```
 
 ### Health Check
+
 ```bash
 # Production
 curl https://your-app.fly.dev/healthz
@@ -287,19 +319,22 @@ flyctl secrets set KEY="new-value"
 ## Costs
 
 ### Free Tier (Fly.io)
+
 - 3 shared-cpu-1x machines
 - 256MB RAM each
 - 160GB outbound data/month
 
 **Your app uses:**
+
 - 1 machine (1GB RAM, 1 CPU)
 - ~$5-10/month estimate
 
-### Qdrant Cloud
-- Free tier: 1GB storage
-- Sufficient for ~10,000 profiles
+### Azure AI Search
+
+- Free tier: 50MB storage
+- Basic tier: ~$275/month (sufficient for production)
+- Scales to millions of documents
 
 ---
 
-*For API documentation, see [API.md](API.md)*
-
+_For API documentation, see [API.md](API.md)_

@@ -1,3 +1,23 @@
+[project]
+name = "wap-backend"
+version = "0.2.0"
+description = "Skill-for-skill exchange platform API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+    "firebase-admin==6.2.0",
+    "pydantic==2.5.0",
+    "pydantic-settings==2.1.0",
+    "openai==1.12.0",
+    "azure-search-documents==11.4.0",
+    "azure-identity==1.15.0",
+    "python-dotenv==1.0.0",
+    "redis==5.0.1",
+    "resend==0.7.0",
+    "httpx==0.25.2",
+]
+
 [tool.black]
 line-length = 100
 target-version = ['py311']

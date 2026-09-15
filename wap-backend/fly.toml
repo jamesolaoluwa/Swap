@@ -9,7 +9,7 @@ primary_region = 'iad'
 [build]
   dockerfile = 'Dockerfile'
 
-# Qdrant configuration is set via secrets (QDRANT_URL, QDRANT_API_KEY)
+# Azure services configuration is set via secrets (AZURE_OPENAI_*, AZURE_SEARCH_*)
 
 [http_service]
   internal_port = 8000

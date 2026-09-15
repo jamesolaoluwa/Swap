@@ -1,13 +1,14 @@
 """Search endpoints."""
 
-from typing import List, Literal, Dict, Any
+from typing import List, Literal, Dict, Any, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.schemas import ProfileSearchResult
+from app.schemas import ProfileSearchResult, SkillSearchResult
 from app.embeddings import get_embedding_service
-from app.qdrant_client import get_qdrant_service
+from app.azure_search import get_azure_search_service, get_skills_search_service
 from app.cache import get_cache_service
+from app.firebase_db import get_firebase_service
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -17,7 +18,7 @@ class SearchRequest(BaseModel):
     
     query: str = Field(..., min_length=1, description="Search query")
     limit: int = Field(10, ge=1, le=100, description="Max results")
-    score_threshold: float = Field(0.3, ge=0, le=1, description="Minimum similarity score")
+    score_threshold: float = Field(0.65, ge=0, le=1, description="Minimum similarity score")
     mode: Literal["offers", "needs", "both"] = Field("offers", description="Which vector to search")
 
 
@@ -25,21 +26,21 @@ class SearchRequest(BaseModel):
 def search_profiles(request: SearchRequest):
     """
     Semantic search for profiles with optional Redis caching.
-    
-    Uses BERT embeddings to find profiles whose skills semantically match
+
+    Uses Azure OpenAI embeddings to find profiles whose skills semantically match
     the search query. Results are cached for 1 hour to improve performance.
-    
+
     Performance:
         - Cache Hit: ~5ms (16x faster)
-        - Cache Miss: ~80ms (normal Qdrant search)
-    
+        - Cache Miss: ~80ms (normal Azure AI Search)
+
     Example:
         Query: "teach me guitar and music"
         Returns: Profiles of people who can teach guitar, music theory, etc.
     """
     cache_service = get_cache_service()
     embedding_service = get_embedding_service()
-    qdrant_service = get_qdrant_service()
+    search_service = get_azure_search_service()
     
     # Try cache first
     cache_key = cache_service._generate_key(
@@ -65,7 +66,7 @@ def search_profiles(request: SearchRequest):
     # Search by mode
     mode = request.mode
     if mode == "offers":
-        results = qdrant_service.search_offers(
+        results = search_service.search_offers(
             query_vec=query_vec,
             limit=request.limit,
             score_threshold=request.score_threshold,
@@ -74,7 +75,7 @@ def search_profiles(request: SearchRequest):
         cache_service.set(cache_key, results, ttl=3600)
         return [ProfileSearchResult(**result) for result in results]
     if mode == "needs":
-        results = qdrant_service.search_needs(
+        results = search_service.search_needs(
             query_vec=query_vec,
             limit=request.limit,
             score_threshold=request.score_threshold,
@@ -82,14 +83,14 @@ def search_profiles(request: SearchRequest):
         # Cache the results
         cache_service.set(cache_key, results, ttl=3600)
         return [ProfileSearchResult(**result) for result in results]
-    
+
     # mode == "both": combine offers and needs; pick the higher score per uid
-    offer_results = qdrant_service.search_offers(
+    offer_results = search_service.search_offers(
         query_vec=query_vec,
         limit=request.limit,
         score_threshold=request.score_threshold,
     )
-    need_results = qdrant_service.search_needs(
+    need_results = search_service.search_needs(
         query_vec=query_vec,
         limit=request.limit,
         score_threshold=request.score_threshold,
@@ -115,6 +116,44 @@ def search_profiles(request: SearchRequest):
     cache_service.set(cache_key, combined_list, ttl=3600)
     
     return [ProfileSearchResult(**result) for result in combined_list]
+
+
+class SkillSearchRequest(BaseModel):
+    """Request model for skill-centric search."""
+    query: str = Field(..., min_length=1, description="Search query")
+    limit: int = Field(10, ge=1, le=100, description="Max results")
+    category: Optional[str] = Field(None, description="Filter by category")
+
+
+@router.post("/skills", response_model=List[SkillSearchResult])
+def search_skills(request: SkillSearchRequest):
+    """
+    Semantic search for individual skills (skill-centric marketplace).
+
+    Returns skill cards with poster info denormalized.
+    """
+    cache_service = get_cache_service()
+    embedding_service = get_embedding_service()
+    skills_search = get_skills_search_service()
+
+    cache_key = cache_service._generate_key(
+        "skill_search",
+        {"query": request.query, "limit": request.limit, "category": request.category or ""},
+    )
+
+    cached = cache_service.get(cache_key)
+    if cached:
+        return [SkillSearchResult(**r) for r in cached]
+
+    query_vec = embedding_service.encode(request.query)
+    results = skills_search.search_skills(
+        query_vec=query_vec,
+        limit=request.limit,
+        category_filter=request.category,
+    )
+
+    cache_service.set(cache_key, results, ttl=3600)
+    return [SkillSearchResult(**r) for r in results]
 
 
 class SkillRecommendationRequest(BaseModel):
@@ -146,8 +185,8 @@ def recommend_skills(request: SkillRecommendationRequest):
     """
     cache_service = get_cache_service()
     embedding_service = get_embedding_service()
-    qdrant_service = get_qdrant_service()
-    
+    search_service = get_azure_search_service()
+
     # Try cache first
     cache_key = cache_service._generate_key(
         "skill_recommend",
@@ -165,13 +204,13 @@ def recommend_skills(request: SkillRecommendationRequest):
     query_vec = embedding_service.encode(request.current_skills)
     
     # Search for people with similar skills (both offers and needs)
-    similar_offers = qdrant_service.search_offers(
+    similar_offers = search_service.search_offers(
         query_vec=query_vec,
         limit=20,
         score_threshold=0.4,
     )
-    
-    similar_needs = qdrant_service.search_needs(
+
+    similar_needs = search_service.search_needs(
         query_vec=query_vec,
         limit=20,
         score_threshold=0.4,
@@ -226,4 +265,122 @@ def recommend_skills(request: SkillRecommendationRequest):
     cache_service.set(cache_key, recommendations, ttl=7200)
     
     return [SkillRecommendation(**rec) for rec in recommendations]
+
+
+def _skills_to_text(skills):
+    """Convert skills array or string to text for embeddings."""
+    if not skills:
+        return None
+    if isinstance(skills, str):
+        return skills
+    if isinstance(skills, list):
+        parts = []
+        for s in skills:
+            if isinstance(s, dict):
+                name = s.get('name') or s.get('title', '')
+                level = s.get('level') or s.get('difficulty', '')
+                if name:
+                    parts.append(f"{name} ({level})" if level else name)
+            elif isinstance(s, str):
+                parts.append(s)
+        return ', '.join(parts) if parts else None
+    return None
+
+
+class ReindexUserRequest(BaseModel):
+    """Request to reindex a single user."""
+    uid: str = Field(..., description="User ID to reindex")
+
+
+class ReindexResponse(BaseModel):
+    """Response from reindex operation."""
+    success: bool
+    message: str
+    skills_indexed: Optional[str] = None
+
+
+@router.post("/reindex-user", response_model=ReindexResponse)
+def reindex_user(request: ReindexUserRequest):
+    """
+    Reindex a single user's skills in Azure AI Search.
+    
+    This should be called after a user posts a new skill to update
+    the search index with their latest skills.
+    
+    Args:
+        request: Contains the user ID to reindex
+        
+    Returns:
+        Success status and message
+    """
+    firebase_service = get_firebase_service()
+    embedding_service = get_embedding_service()
+    azure_search_service = get_azure_search_service()
+    
+    uid = request.uid
+    
+    try:
+        # Get user profile
+        profile = firebase_service.get_profile(uid)
+        if not profile:
+            raise HTTPException(status_code=404, detail=f"Profile not found for uid: {uid}")
+        
+        # Get skills from skills collection (single source of truth)
+        user_skills = firebase_service.get_skills_by_user(uid)
+        skills_to_offer = _skills_to_text(user_skills) if user_skills else None
+        
+        # Fallback to profile.skillsToOffer for backwards compat
+        if not skills_to_offer:
+            skills_to_offer = _skills_to_text(
+                profile.get('skills_to_offer') or profile.get('skillsToOffer')
+            )
+        
+        # Get services needed from profile
+        services_needed = _skills_to_text(
+            profile.get('services_needed') or profile.get('servicesNeeded')
+        )
+        
+        # Use placeholder if missing
+        skills_to_offer = skills_to_offer or "general help"
+        services_needed = services_needed or "general services"
+        
+        # Generate embeddings
+        offer_vec = embedding_service.encode(skills_to_offer)
+        need_vec = embedding_service.encode(services_needed)
+        
+        # Prepare payload
+        payload = {
+            "uid": uid,
+            "email": profile.get('email'),
+            "display_name": profile.get('display_name') or profile.get('displayName') or profile.get('fullName'),
+            "photo_url": profile.get('photo_url') or profile.get('photoUrl'),
+            "full_name": profile.get('full_name') or profile.get('fullName'),
+            "username": profile.get('username'),
+            "bio": profile.get('bio'),
+            "city": profile.get('city'),
+            "timezone": profile.get('timezone'),
+            "skills_to_offer": skills_to_offer,
+            "services_needed": services_needed,
+            "dm_open": profile.get('dm_open', profile.get('dmOpen', True)),
+            "show_city": profile.get('show_city', profile.get('showCity', True)),
+        }
+        
+        # Upsert to Azure AI Search
+        azure_search_service.upsert_profile(
+            username=uid,
+            offer_vec=offer_vec,
+            need_vec=need_vec,
+            payload=payload,
+        )
+        
+        return ReindexResponse(
+            success=True,
+            message=f"Successfully reindexed user {uid}",
+            skills_indexed=skills_to_offer
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reindex user: {str(e)}")
 

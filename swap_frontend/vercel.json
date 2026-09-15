@@ -1,0 +1,5 @@
+{
+  "buildCommand": "[ -d flutter ] || git clone https://github.com/flutter/flutter.git -b stable --depth 1 && flutter/bin/flutter pub get && flutter/bin/flutter build web --release --dart-define=API_BASE_URL=https://wap-backend-pi.vercel.app",
+  "outputDirectory": "build/web",
+  "framework": null
+}

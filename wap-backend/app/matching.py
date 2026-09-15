@@ -3,7 +3,7 @@
 from typing import List, Dict, Any
 
 from app.embeddings import get_embedding_service
-from app.qdrant_client import get_qdrant_service
+from app.azure_search import get_azure_search_service
 
 
 def compute_reciprocal_matches(
@@ -29,21 +29,21 @@ def compute_reciprocal_matches(
         List of matched profiles with reciprocal scores
     """
     embedding_service = get_embedding_service()
-    qdrant_service = get_qdrant_service()
-    
+    search_service = get_azure_search_service()
+
     # Generate embeddings
     my_offer_vec = embedding_service.encode(my_offer_text)
     my_need_vec = embedding_service.encode(my_need_text)
-    
+
     # Search 1: Find people who want what I offer (search their needs)
-    they_need_matches = qdrant_service.search_needs(
+    they_need_matches = search_service.search_needs(
         query_vec=my_offer_vec,
         limit=50,
         score_threshold=0.2,
     )
-    
+
     # Search 2: Find people who offer what I need (search their offers)
-    they_offer_matches = qdrant_service.search_offers(
+    they_offer_matches = search_service.search_offers(
         query_vec=my_need_vec,
         limit=50,
         score_threshold=0.2,

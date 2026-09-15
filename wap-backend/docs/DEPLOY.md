@@ -11,16 +11,19 @@ Deploy $wap backend to Fly.io.
 ## Install Fly CLI
 
 ### macOS
+
 ```bash
 brew install flyctl
 ```
 
 ### Linux
+
 ```bash
 curl -L https://fly.io/install.sh | sh
 ```
 
 ### Windows
+
 ```powershell
 iwr https://fly.io/install.ps1 -useb | iex
 ```
@@ -46,15 +49,21 @@ fly launch --no-deploy
 # - Setup Redis? → No
 ```
 
-### 3. Set Firebase Credentials
+### 3. Set Secrets
 
 ```bash
-# Set as secret (minified JSON)
+# Firebase credentials
 fly secrets set FIREBASE_CREDENTIALS_JSON="$(cat firebase-credentials.json | jq -c .)"
 
-# Or if you don't have jq:
-cat firebase-credentials.json | tr -d '\n' | pbcopy
-fly secrets set FIREBASE_CREDENTIALS_JSON="<paste>"
+# Azure OpenAI
+fly secrets set AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+fly secrets set AZURE_OPENAI_API_KEY="your-key"
+fly secrets set AZURE_OPENAI_API_VERSION="2024-02-01"
+fly secrets set AZURE_EMBEDDING_DEPLOYMENT="text-embedding-3-small"
+
+# Azure AI Search
+fly secrets set AZURE_SEARCH_ENDPOINT="https://your-search.search.windows.net"
+fly secrets set AZURE_SEARCH_API_KEY="your-key"
 ```
 
 ### 4. Deploy
@@ -76,30 +85,20 @@ fly logs
 curl https://your-app.fly.dev/healthz
 ```
 
-## Optional: Setup Qdrant on Fly.io
+## Azure Services Setup
 
-If you want Qdrant on Fly.io instead of external:
+### Azure OpenAI
 
-```bash
-# Create Qdrant app
-fly apps create wap-qdrant
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Create an Azure OpenAI resource
+3. Deploy `text-embedding-3-small` model
+4. Get the endpoint and API key from the resource
 
-# Deploy Qdrant
-fly deploy --app wap-qdrant --image qdrant/qdrant:v1.7.0
+### Azure AI Search
 
-# Update main app to use internal Qdrant
-fly secrets set QDRANT_HOST="wap-qdrant.internal"
-```
-
-Or use **Qdrant Cloud** (recommended):
-1. Sign up at [cloud.qdrant.io](https://cloud.qdrant.io)
-2. Create cluster (free tier available)
-3. Set secrets:
-
-```bash
-fly secrets set QDRANT_HOST="your-cluster.cloud.qdrant.io"
-fly secrets set QDRANT_PORT="6333"
-```
+1. Create an Azure AI Search service in Azure Portal
+2. Get the endpoint and admin API key
+3. The index will be created automatically on first profile upsert
 
 ## Scaling
 
@@ -132,7 +131,7 @@ fly logs --history
 ```bash
 fly ssh console
 
-# Inside: reindex Qdrant
+# Inside: reindex Azure AI Search
 python scripts/reindex.py
 ```
 
@@ -173,8 +172,7 @@ app = "wap-backend"
 primary_region = "iad"
 
 [env]
-  QDRANT_HOST = "qdrant.internal"
-  QDRANT_PORT = "6333"
+  # Azure services configured via secrets
 
 [http_service]
   internal_port = 8000
@@ -194,12 +192,15 @@ primary_region = "iad"
 ## Costs
 
 **Free Tier:**
+
 - 3 shared-cpu-1x VMs
 - 160GB storage
 
 **Estimated Monthly (beyond free):**
+
 - App (1GB RAM): ~$5-10
-- Qdrant Cloud (1GB): ~$30-50
+- Azure OpenAI: Pay-per-use (embeddings)
+- Azure AI Search: ~$275/month (Basic tier) or pay-per-use
 
 For MVP, free tier should be sufficient!
 
@@ -212,8 +213,10 @@ fly logs
 ```
 
 Common issues:
+
 - Missing `FIREBASE_CREDENTIALS_JSON` secret
-- Incorrect Qdrant connection
+- Missing Azure OpenAI or Azure AI Search secrets
+- Incorrect Azure endpoint URLs
 
 ### Need more memory
 
@@ -225,4 +228,3 @@ fly scale memory 2048
 
 - [Fly.io Docs](https://fly.io/docs)
 - [Fly.io Community](https://community.fly.io)
-

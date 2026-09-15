@@ -20,15 +20,16 @@
 └───┬──────────┬───┘
     │          │
     ▼          ▼
-┌─────────┐ ┌────────┐
-│Firebase │ │Qdrant  │
-│Firestore│ │Vectors │
-└─────────┘ └────────┘
+┌─────────┐ ┌──────────────┐
+│Firebase │ │Azure AI     │
+│Firestore│ │Search       │
+└─────────┘ └──────────────┘
 ```
 
 ## Request Flow
 
 ### Profile Creation
+
 ```
 1. POST /profiles/upsert
    ↓
@@ -38,18 +39,19 @@
    ↓
 4. ML Model: Generate embeddings (skills → vectors)
    ↓
-5. Qdrant: Store vectors for search
+5. Azure AI Search: Store vectors for search
    ↓
 6. Return profile
 ```
 
 ### Semantic Search
+
 ```
 1. POST /search {"query": "guitar", "mode": "offers"}
    ↓
-2. ML Model: query → 384-dim vector
+2. ML Model: query → 1536-dim vector
    ↓
-3. Qdrant: Vector similarity search
+3. Azure AI Search: Vector similarity search
    ↓
 4. Firebase: Fetch full profiles
    ↓
@@ -57,6 +59,7 @@
 ```
 
 ### Reciprocal Matching
+
 ```
 1. POST /match/reciprocal
    {
@@ -79,13 +82,14 @@
 ## Data Models
 
 ### Profile Schema
+
 ```python
 {
   "uid": string (required),
   "email": string (required, validated),
   "display_name": string,
-  "skills_to_offer": string,     # → offer_vec (384-dim)
-  "services_needed": string,     # → need_vec (384-dim)
+  "skills_to_offer": string,     # → offer_vec (1536-dim)
+  "services_needed": string,     # → need_vec (1536-dim)
   "bio": string,
   "city": string,
   "created_at": timestamp,
@@ -93,39 +97,46 @@
 }
 ```
 
-### Vector Storage (Qdrant)
+### Vector Storage (Azure AI Search)
+
 ```python
 {
-  "id": UUID(uid),
-  "vector": {
-    "offer_vec": [0.1, -0.2, ...],  # 384 floats
-    "need_vec": [0.3, 0.4, ...]     # 384 floats
-  },
-  "payload": {profile_data}
+  "id": uid,
+  "offer_vec": [0.1, -0.2, ...],  # 1536 floats
+  "need_vec": [0.3, 0.4, ...],    # 1536 floats
+  "uid": "...",
+  "email": "...",
+  "display_name": "...",
+  # ... other profile fields
 }
 ```
 
 ## Technology Choices
 
-### Why sentence-transformers?
-- 95% accuracy of BERT at 4x smaller size
-- 384 dimensions vs 768 (BERT)
-- Fast inference (~10-20ms)
-- Pre-trained on semantic similarity
+### Why Azure OpenAI?
 
-### Why Qdrant?
-- Named vectors (2 vectors per user: offers + needs)
-- HNSW index (fast ~O(log n) search)
-- Simple API
-- Cloud + self-hosted options
+- High-quality embeddings (text-embedding-3-small)
+- 1536 dimensions for better semantic understanding
+- Fast inference (~10-20ms)
+- Managed service with high availability
+
+### Why Azure AI Search?
+
+- Native vector search support
+- HNSW indexing for fast similarity search
+- Integrated with Azure ecosystem
+- Scales to millions of documents
+- Built-in filtering and faceting
 
 ### Why Firebase?
+
 - NoSQL flexibility
 - Automatic scaling
 - Built-in indexing
 - Real-time capabilities (future)
 
 ### Why FastAPI?
+
 - Automatic API docs
 - Type validation with Pydantic
 - High performance (async capable)
@@ -133,22 +144,24 @@
 
 ## Performance Optimizations
 
-1. **Model Pre-loading**: Load ML model on startup (not first request)
-2. **Vector Indexing**: HNSW for O(log n) search
-3. **Connection Pooling**: Reuse Firebase/Qdrant connections
+1. **Model Pre-loading**: Load embedding service on startup (not first request)
+2. **Vector Indexing**: HNSW for O(log n) search in Azure AI Search
+3. **Connection Pooling**: Reuse Firebase/Azure connections
 4. **Batch Fetching**: Get multiple profiles in one query
 
 ## Scalability
 
 ### Current Capacity
+
 - 1GB RAM, 1 CPU
 - ~1000 profiles
 - ~10-50 req/s
 
 ### Scaling Strategy
+
 1. **Horizontal**: Add more Fly.io machines
 2. **Database**: Firestore auto-scales
-3. **Vectors**: Qdrant Cloud scales to millions
+3. **Vectors**: Azure AI Search scales to millions
 4. **Caching**: Add Redis for frequent queries
 
 ## Security (Production TODO)
@@ -156,6 +169,7 @@
 Current: No auth (MVP)
 
 Production needs:
+
 1. Firebase Auth JWT validation
 2. Rate limiting (per user)
 3. CORS configuration
@@ -164,13 +178,16 @@ Production needs:
 ## Deployment
 
 ### Local Development
+
 ```bash
-docker-compose up -d
+docker-compose up -d redis
 # → FastAPI (port 8000)
-# → Qdrant (port 6333)
+# → Redis (port 6379)
+# → Azure services configured via environment variables
 ```
 
 ### Production (Fly.io)
+
 ```bash
 flyctl deploy
 # → Builds Docker image
@@ -179,9 +196,12 @@ flyctl deploy
 ```
 
 **Environment Variables:**
+
 - `FIREBASE_CREDENTIALS_JSON`: Service account
-- `QDRANT_URL`: Vector DB endpoint
-- `QDRANT_API_KEY`: Auth key
+- `AZURE_OPENAI_ENDPOINT`: Azure OpenAI endpoint
+- `AZURE_OPENAI_API_KEY`: Azure OpenAI API key
+- `AZURE_SEARCH_ENDPOINT`: Azure AI Search endpoint
+- `AZURE_SEARCH_API_KEY`: Azure AI Search API key
 
 ## Monitoring
 
@@ -191,5 +211,4 @@ flyctl deploy
 
 ---
 
-*For detailed API documentation, see [API.md](API.md)*
-
+_For detailed API documentation, see [API.md](API.md)_

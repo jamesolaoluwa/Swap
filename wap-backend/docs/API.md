@@ -18,11 +18,16 @@ curl http://localhost:8000/healthz
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
-  "firebase": "connected",
-  "qdrant": "connected"
+  "services": {
+    "firebase": "connected",
+    "azure_search": "configured",
+    "azure_openai": "configured",
+    "redis": "connected"
+  }
 }
 ```
 
@@ -47,6 +52,7 @@ curl -X POST http://localhost:8000/profiles/upsert \
 ```
 
 **Response:**
+
 ```json
 {
   "uid": "user123",
@@ -72,6 +78,7 @@ curl http://localhost:8000/profiles/user123
 ```
 
 **Response:**
+
 ```json
 {
   "uid": "user123",
@@ -90,6 +97,7 @@ curl http://localhost:8000/profiles/user123
 Find users by natural language query with 3 search modes.
 
 #### Mode: `offers` (default)
+
 Find people who **can teach** what you want to learn.
 
 ```bash
@@ -103,6 +111,7 @@ curl -X POST http://localhost:8000/search \
 ```
 
 #### Mode: `needs`
+
 Find people who **want to learn** what you can teach.
 
 ```bash
@@ -116,6 +125,7 @@ curl -X POST http://localhost:8000/search \
 ```
 
 #### Mode: `both`
+
 Search **everything** (offers + needs).
 
 ```bash
@@ -129,6 +139,7 @@ curl -X POST http://localhost:8000/search \
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -171,6 +182,7 @@ curl -X POST http://localhost:8000/match/reciprocal \
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -185,11 +197,13 @@ curl -X POST http://localhost:8000/match/reciprocal \
 ```
 
 **Algorithm:**
+
 1. Search **their offers** vs **my needs** → score A
 2. Search **my offers** vs **their needs** → score B
 3. **Harmonic mean**: `2*(A*B)/(A+B)`
 
 Why harmonic mean? Penalizes lopsided matches:
+
 - (0.9, 0.9) → 0.90 ✅ Great mutual match
 - (0.9, 0.3) → 0.45 ❌ One-sided
 
@@ -198,6 +212,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ## Request Schema
 
 ### ProfileCreate
+
 ```json
 {
   "uid": "string (required)",
@@ -211,6 +226,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 ### SearchRequest
+
 ```json
 {
   "query": "string (required)",
@@ -220,6 +236,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 ### ReciprocalMatchRequest
+
 ```json
 {
   "my_offer_text": "string (required)",
@@ -233,6 +250,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ## Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "detail": "Validation error message"
@@ -240,6 +258,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "detail": "Profile not found"
@@ -247,6 +266,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "detail": "Internal error message"
@@ -258,6 +278,7 @@ Why harmonic mean? Penalizes lopsided matches:
 ## Testing with Postman
 
 ### 1. Create Collection
+
 - Name: `$wap Backend`
 - Base URL: `{{base_url}}`
 - Variable: `base_url = http://localhost:8000`
@@ -265,13 +286,16 @@ Why harmonic mean? Penalizes lopsided matches:
 ### 2. Add Requests
 
 **Request 1: Health Check**
+
 - Method: GET
 - URL: `{{base_url}}/healthz`
 
 **Request 2: Create Profile**
+
 - Method: POST
 - URL: `{{base_url}}/profiles/upsert`
 - Body (raw JSON):
+
 ```json
 {
   "uid": "test_user",
@@ -283,9 +307,11 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 **Request 3: Search (Offers)**
+
 - Method: POST
 - URL: `{{base_url}}/search`
 - Body:
+
 ```json
 {
   "query": "guitar lessons",
@@ -295,9 +321,11 @@ Why harmonic mean? Penalizes lopsided matches:
 ```
 
 **Request 4: Reciprocal Match**
+
 - Method: POST
 - URL: `{{base_url}}/match/reciprocal`
 - Body:
+
 ```json
 {
   "my_offer_text": "Python programming",
@@ -310,15 +338,15 @@ Why harmonic mean? Penalizes lopsided matches:
 
 ## Performance
 
-| Endpoint | Avg Latency | Notes |
-|----------|-------------|-------|
-| `/healthz` | ~1ms | Connection check only |
-| `/profiles/upsert` | ~150ms | Firestore + Qdrant write |
-| `/profiles/{uid}` | ~20ms | Firestore read |
-| `/search` | ~80ms | ML inference + vector search |
-| `/match/reciprocal` | ~120ms | Dual vector search |
+| Endpoint            | Avg Latency | Notes                             |
+| ------------------- | ----------- | --------------------------------- |
+| `/healthz`          | ~1ms        | Connection check only             |
+| `/profiles/upsert`  | ~150ms      | Firestore + Azure AI Search write |
+| `/profiles/{uid}`   | ~20ms       | Firestore read                    |
+| `/search`           | ~80ms       | ML inference + vector search      |
+| `/match/reciprocal` | ~120ms      | Dual vector search                |
 
-*Tested on Fly.io (1GB RAM, 1 CPU)*
+_Tested on Fly.io (1GB RAM, 1 CPU)_
 
 ---
 
@@ -330,4 +358,4 @@ Production recommendation: 100 req/min per user
 
 ---
 
-*For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md)*
+_For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md)_

@@ -2,7 +2,7 @@
 Redis caching service.
 
 Falls back gracefully if Redis is unavailable - app continues to work without cache.
-Cache hits are about 16x faster than Qdrant searches (~5ms vs ~80ms).
+Cache hits are about 16x faster than Azure AI Search queries (~5ms vs ~80ms).
 """
 
 import json

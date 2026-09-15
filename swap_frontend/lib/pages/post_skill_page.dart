@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/b2c_auth_service.dart';
+import '../services/skill_service.dart';
 import 'home_page.dart';
 import '../widgets/app_sidebar.dart';
+import '../config/app_config.dart';
+
+final String _apiBaseUrl = AppConfig.apiBaseUrl;
 
 // Color palette used throughout the page
 const Color backgroundColor = Color(0xFF0F0F11);
@@ -20,6 +23,7 @@ class PostSkillPage extends StatefulWidget {
 class _PostSkillPageState extends State<PostSkillPage> {
   final _formKey = GlobalKey<FormState>();
   bool _showPreview = false;
+  bool _publishing = false;
 
   // Controllers / state
   final TextEditingController _titleController = TextEditingController();
@@ -82,7 +86,7 @@ class _PostSkillPageState extends State<PostSkillPage> {
     }
   }
 
-  void _publish() async {
+  Future<void> _publish() async {
     if (!_canPublish) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete the required fields.')),
@@ -90,8 +94,7 @@ class _PostSkillPageState extends State<PostSkillPage> {
       return;
     }
 
-    // Get current user
-    final user = FirebaseAuth.instance.currentUser;
+    final user = B2CAuthService.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please sign in to post a skill')),
@@ -99,70 +102,64 @@ class _PostSkillPageState extends State<PostSkillPage> {
       return;
     }
 
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    setState(() => _publishing = true);
 
     try {
-      // Create skill document
-      final skillData = {
+      await SkillService().createSkill(user.uid, {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'category': _category!.toLowerCase(),
-        'difficulty': _difficulty!,
-        'estimatedHours': int.tryParse(_hoursController.text) ?? 1,
-        'deliveryFormat': _delivery,
-        'tags': List<String>.from(_tags),
-        'deliverables': List<String>.from(_deliverables),
-        'creatorUid': user.uid,
-        'creatorEmail': user.email ?? '',
-        'creatorName': user.displayName ?? user.email ?? 'Anonymous',
-        'createdAt': FieldValue.serverTimestamp(),
-        'rating': 4.5, // Default rating for new skills
-        'verified': false, // Can be set to true by admin later
-        'isNew': true,
-      };
+        'category': _category,
+        'difficulty': _difficulty,
+        'estimated_hours': double.tryParse(_hoursController.text) ?? 1,
+        'delivery': _delivery,
+        'tags': _tags,
+        'deliverables': _deliverables,
+      });
 
-      // Save to Firestore 'skills' collection
-      await FirebaseFirestore.instance.collection('skills').add(skillData);
+      // Also add to user's profile skillsToOffer so it appears in swap dialogs
+      await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
+        'skillsToOffer': FieldValue.arrayUnion([
+          {
+            'name': _titleController.text.trim(),
+            'level': _difficulty,
+            'category': _category,
+          }
+        ]),
+      }, SetOptions(merge: true));
+
+      // Trigger Azure Search reindex for this user
+      try {
+        await http.post(
+          Uri.parse('$_apiBaseUrl/search/reindex-user'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'uid': user.uid}),
+        );
+        debugPrint('✅ User reindexed for search');
+      } catch (e) {
+        // Don't fail the whole operation if reindex fails
+        debugPrint('⚠️ Failed to reindex user for search: $e');
+      }
 
       if (!mounted) return;
-
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Skill published successfully!'),
+          content: Text('Skill posted to \$wap!'),
           backgroundColor: Colors.green,
         ),
       );
-
-      // Navigate back to home after a short delay
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomePage()),
         (route) => false,
       );
     } catch (e) {
       if (!mounted) return;
-
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to publish skill: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Failed to post skill: $e')),
       );
+    } finally {
+      if (mounted) setState(() => _publishing = false);
     }
   }
 
@@ -324,7 +321,7 @@ class _PostSkillPageState extends State<PostSkillPage> {
                                               const SizedBox(width: 12),
                                               Expanded(
                                                 child: ElevatedButton(
-                                                  onPressed: _canPublish
+                                                  onPressed: _canPublish && !_publishing
                                                       ? _publish
                                                       : null,
                                                   style: ButtonStyle(
@@ -488,7 +485,7 @@ class _PostSkillPageState extends State<PostSkillPage> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: _canPublish
+                                          onPressed: _canPublish && !_publishing
                                               ? _publish
                                               : null,
                                           style: ButtonStyle(
